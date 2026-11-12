@@ -682,6 +682,7 @@ function addMediaControls(media,r,host,file){
  const canvas=q('waveCanvas'),ctx=canvas.getContext('2d');
  let wavePeaks=null, waveDrag=null, wavePending=false;
  let zoom=1,viewStart=0;
+ let scrubWasPaused=true, scrubStartedPlayback=false;
  const visibleDuration=()=>waveDuration()/zoom;
  function clampView(){viewStart=Math.max(0,Math.min(viewStart,Math.max(0,waveDuration()-visibleDuration())))}
  function setZoom(next){const d=waveDuration();if(!d)return;const focus=Math.max(viewStart,Math.min(viewStart+visibleDuration(),media.currentTime||0));const ratio=(focus-viewStart)/visibleDuration();zoom=Math.max(1,Math.min(64,next));viewStart=focus-ratio*visibleDuration();clampView();q('waveZoomLabel').textContent=Math.round(zoom*100)+'%';paintWave()}
@@ -691,6 +692,12 @@ function addMediaControls(media,r,host,file){
  canvas.addEventListener('wheel',e=>{if(zoom<=1)return;e.preventDefault();viewStart+=e.deltaY/600*visibleDuration();clampView();paintWave()},{passive:false});
  const waveWidth=()=>canvas.getBoundingClientRect().width||640;
  function waveDuration(){return Number.isFinite(media.duration)&&media.duration>0?media.duration:0}
+ function followPlayhead(){
+  if(zoom<=1||waveDrag)return;
+  const t=media.currentTime||0,span=visibleDuration();
+  // Keep the playhead near the right-hand side while playing; do not scroll while manually scrubbing.
+  if(t>viewStart+span*.85||t<viewStart){viewStart=t-span*.25;clampView()}
+ }
  function paintWave(){
   const w=Math.max(300,Math.round(waveWidth()*Math.min(2,window.devicePixelRatio||1))),height=130;
   if(canvas.width!==w||canvas.height!==height){canvas.width=w;canvas.height=height}
@@ -706,6 +713,7 @@ function addMediaControls(media,r,host,file){
  }
  let lastVideoPaint=0,idleWaveJob=null;
  function updateWave(){
+  if(!media.paused&&!waveDrag)followPlayhead();
   if(wavePending)return;
   if(r.kind==='video'&&media.paused&&!waveDrag&&typeof requestIdleCallback==='function'){
    wavePending=true;idleWaveJob=requestIdleCallback(()=>{idleWaveJob=null;wavePending=false;paintWave()},{timeout:250});return;
@@ -721,7 +729,16 @@ function addMediaControls(media,r,host,file){
   const nearA=state.a!==null&&Math.abs(t-state.a)<tol,nearB=state.b!==null&&Math.abs(t-state.b)<tol;
   waveDrag=!e.shiftKey?'scrub':nearA&&nearB?(Math.abs(t-state.a)<=Math.abs(t-state.b)?'a':'b'):nearA?'a':nearB?'b':'range';
   dragStart=t;dragMoved=false;canvas.setPointerCapture(e.pointerId);
-  if(waveDrag==='scrub'){media.currentTime=t;draw();}
+  if(waveDrag==='scrub'){
+   scrubWasPaused=media.paused;scrubStartedPlayback=false;
+   media.currentTime=t;draw();
+   // Playback while dragging makes the scrub audible, including when initially paused.
+   if(scrubWasPaused){
+    const playRequest=media.play();
+    if(playRequest&&typeof playRequest.then==='function')playRequest.then(()=>{scrubStartedPlayback=true;if(waveDrag!=='scrub')media.pause()}).catch(()=>{});
+    else scrubStartedPlayback=true;
+   }
+  }
  });
  canvas.addEventListener('pointermove',e=>{
   if(!waveDrag)return;
@@ -742,13 +759,16 @@ function addMediaControls(media,r,host,file){
  });
  function finishWave(e){
   if(!waveDrag)return;
-  if(waveDrag==='scrub')media.currentTime=waveTime(e);
+  if(waveDrag==='scrub'){
+   media.currentTime=waveTime(e);
+   if(scrubWasPaused&&scrubStartedPlayback)media.pause();
+  }
   if(!dragMoved&&waveDrag==='range')media.currentTime=waveTime(e);
   if(dragMoved&&waveDrag!=='scrub'){if(!valid())state.loop=false;save()}
   waveDrag=null;dragStart=null;draw();
  }
  canvas.addEventListener('pointerup',finishWave);
- canvas.addEventListener('pointercancel',()=>{waveDrag=null;dragStart=null;draw()});
+ canvas.addEventListener('pointercancel',()=>{if(waveDrag==='scrub'&&scrubWasPaused&&scrubStartedPlayback)media.pause();waveDrag=null;dragStart=null;draw()});
  q('waveStart').onclick=()=>{state.a=media.currentTime;if(state.b!==null&&state.b<=state.a){state.b=null;state.loop=false}save();draw()};
  q('waveEnd').onclick=()=>{state.b=media.currentTime;if(state.a!==null&&state.b<=state.a)state.loop=false;save();draw()};
  // V45: Restore the original V37/V39 full-file decoding path for videos.
@@ -787,7 +807,7 @@ function addMediaControls(media,r,host,file){
  }
 
  analyzeWave();
- media.addEventListener('timeupdate',updateWave);media.addEventListener('loadedmetadata',updateWave);media.addEventListener('pause',updateWave);media.addEventListener('seeked',updateWave);window.addEventListener('resize',updateWave);
+ media.addEventListener('timeupdate',updateWave);media.addEventListener('playing',updateWave);media.addEventListener('loadedmetadata',updateWave);media.addEventListener('pause',updateWave);media.addEventListener('seeked',updateWave);window.addEventListener('resize',updateWave);
 
  q('toggleLoop').onclick=()=>{if(!valid()){alert('Select a loop by dragging across the waveform, or set In and Out at the playhead.');return}state.loop=!state.loop;if(state.loop&&(media.currentTime<state.a||media.currentTime>=state.b))media.currentTime=state.a;save();draw()};
  q('clearLoop').onclick=()=>{state.a=null;state.b=null;state.loop=false;save();draw()};
