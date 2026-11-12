@@ -215,6 +215,7 @@ label{display:block;font-weight:650;font-size:13px;margin:0 0 5px}input,select,t
 .cloud-save-btn[data-state="dirty"]{background:#a56610!important;border-color:#a56610!important;color:#fff!important}
 .cloud-save-btn[data-state="error"]{background:#ad3030!important;border-color:#ad3030!important;color:#fff!important}
 .cloud-save-btn[data-state="idle"]{background:#527089!important;border-color:#527089!important;color:#fff!important}
+.media-tools .mcb-play-emphasis{background:#13a85d!important;color:#fff!important;border:2px solid #08783f!important;font-weight:800!important;box-shadow:0 0 0 2px #13a85d33;min-width:88px}.media-tools .mcb-play-emphasis:hover{background:#07864a!important}.media-tools #mediaHelp{font-size:19px!important;font-weight:900!important;min-width:38px}.media-tools .media-control-strip button:hover{filter:brightness(1.08)}
 </style>
 </head>
 <body>
@@ -427,9 +428,9 @@ function openItemEditor(cid,iid=null){
  $('itemModal').hidden=false;renderItemAttachments();$('itemEditName').focus();
 }
 function currentEditItem(){return itemEditor&&course.classes.find(c=>c.id===itemEditor.cid)?.items.find(i=>i.id===itemEditor.iid)}
-function renderItemAttachments(){const item=currentEditItem();if(!item)return;const owned=(course.resources||[]).filter(r=>r.scope==='item:'+item.id);const links=(item.linkedResourceIds||[]).map(id=>(course.resources||[]).find(r=>r.id===id)).filter(Boolean);const unique=[...new Map([...owned,...links].map(r=>[r.id,r])).values()];$('itemAttached').innerHTML='<b>Attached resources ('+unique.length+')</b>'+ (unique.length?unique.map(r=>'<div class="mcb-resource-line"><span>'+escapeHTML(r.name)+' <small>('+escapeHTML(r.kind)+')</small></span><button class="secondary" type="button" onclick="unlinkItemResource('+JSON.stringify(r.id)+')">Detach</button></div>').join(''):'<p class="help">No resources attached yet.</p>')}
+function renderItemAttachments(){const item=currentEditItem();if(!item)return;const owned=(course.resources||[]).filter(r=>r.scope==='item:'+item.id);const links=(item.linkedResourceIds||[]).map(id=>(course.resources||[]).find(r=>r.id===id)).filter(Boolean);const unique=[...new Map([...owned,...links].map(r=>[r.id,r])).values()];$('itemAttached').innerHTML='<b>Attached resources ('+unique.length+')</b>'+ (unique.length?unique.map(r=>'<div class="mcb-resource-line"><span>'+escapeHTML(mediaDisplayName(r.name))+' <small>('+escapeHTML(r.kind)+')</small></span><button class="secondary" type="button" onclick="unlinkItemResource('+JSON.stringify(r.id)+')">Detach</button></div>').join(''):'<p class="help">No resources attached yet.</p>')}
 function unlinkItemResource(id){const it=currentEditItem();if(!it)return;it.linkedResourceIds=(it.linkedResourceIds||[]).filter(x=>x!==id);const r=(course.resources||[]).find(x=>x.id===id);if(r?.scope==='item:'+it.id){r.scope='course'}renderItemAttachments();markDirty();renderResources();renderPracticeResources()}
-function renderLibraryChoices(){const it=currentEditItem();if(!it)return;const list=(course.resources||[]).filter(r=>r.scope!=='item:'+it.id);$('itemLibraryOptions').innerHTML=list.length?list.map(r=>'<label><input type="checkbox" class="item-lib-choice" value="'+escapeHTML(r.id)+'"> '+escapeHTML(r.name)+' <small>('+escapeHTML(r.kind)+')</small></label>').join(''):'<p class="help">No existing resources yet. Import a file first.</p>'}
+function renderLibraryChoices(){const it=currentEditItem();if(!it)return;const list=(course.resources||[]).filter(r=>r.scope!=='item:'+it.id);$('itemLibraryOptions').innerHTML=list.length?list.map(r=>'<label><input type="checkbox" class="item-lib-choice" value="'+escapeHTML(r.id)+'"> '+escapeHTML(mediaDisplayName(r.name))+' <small>('+escapeHTML(r.kind)+')</small></label>').join(''):'<p class="help">No existing resources yet. Import a file first.</p>'}
 async function cancelItemEditor(){const e=itemEditor;if(!e)return;const c=course.classes.find(x=>x.id===e.cid),it=c?.items.find(x=>x.id===e.iid);if(e.isNew){c.items=c.items.filter(x=>x.id!==e.iid)}else if(it){Object.keys(it).forEach(k=>delete it[k]);Object.assign(it,e.original)}const fresh=(course.resources||[]).filter(r=>r.scope==='item:'+e.iid&&!e.originalResourceIds.has(r.id));for(const r of fresh){course.resources=course.resources.filter(x=>x.id!==r.id);try{await mediaDelete(r.id)}catch(err){console.warn(err)}}itemEditor=null;$('itemModal').hidden=true;markDirty();render()}
 function saveItemEditor(){const it=currentEditItem();if(!it)return;const name=$('itemEditName').value.trim();if(!name){$('itemModalMessage').textContent='Please enter a practice item name.';return}it.name=name;it.type=$('itemEditType').value;it.minutes=Math.max(1,Number($('itemEditMinutes').value)||10);it.url=$('itemEditUrl').value.trim();if(it.youtubeTitleUrl!==it.url){delete it.youtubeTitle;delete it.youtubeTitleUrl}itemEditor=null;$('itemModal').hidden=true;markDirty();render()}
 function addItem(cid){openItemEditor(cid)}
@@ -447,12 +448,13 @@ function mediaDB(){return new Promise((resolve,reject)=>{const q=indexedDB.open(
 async function mediaPut(key,file){const db=await mediaDB();try{await new Promise((res,rej)=>{const tx=db.transaction(MEDIA_STORE,'readwrite');tx.objectStore(MEDIA_STORE).put(file,key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}finally{db.close()}}
 async function mediaGet(key){const db=await mediaDB();try{return await new Promise((res,rej)=>{const q=db.transaction(MEDIA_STORE).objectStore(MEDIA_STORE).get(key);q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error)})}finally{db.close()}}
 async function mediaDelete(key){const db=await mediaDB();try{await new Promise((res,rej)=>{const tx=db.transaction(MEDIA_STORE,'readwrite');tx.objectStore(MEDIA_STORE).delete(key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}finally{db.close()}}
+function mediaDisplayName(name){return String(name||'').replace(/\.(mp3|wav|m4a|ogg|flac|aac|mp4|webm|mov|m4v|pdf)$/i,'')}
 function resourceType(file){const t=file.type||'',n=file.name.toLowerCase();if(t==='application/pdf'||n.endsWith('.pdf'))return 'pdf';if(t.startsWith('audio/')||/\.(mp3|wav|m4a|ogg|flac|aac)$/.test(n))return 'audio';if(t.startsWith('video/')||/\.(mp4|webm|mov|m4v)$/.test(n))return 'video';return null}
 function scopeOptions(){let html='<option value="course">Entire course</option>';for(const c of course.classes){html+=`<option value="class:${escapeHTML(c.id)}">Class: ${escapeHTML(c.name)}</option>`;for(const it of c.items||[])html+=`<option value="item:${escapeHTML(it.id)}">Item: ${escapeHTML(c.name)} / ${escapeHTML(it.name)}</option>`}return html}
 function scopeLabel(scope){if(scope==='course')return 'Entire course';const [type,id]=scope.split(':');for(const c of course.classes){if(type==='class'&&c.id===id)return 'Class: '+c.name;if(type==='item'){const it=c.items?.find(x=>x.id===id);if(it)return 'Item: '+c.name+' / '+it.name}}return 'Unlinked'}
 function attachToClass(id){switchTab('resources');$('resourceScope').value='class:'+id;$('resourceFiles').click()}
 function attachToItem(cid,id){switchTab('resources');$('resourceScope').value='item:'+id;$('resourceFiles').click()}
-function renderResources(){const select=$('resourceScope');if(!select)return;const selected=select.value;select.innerHTML=scopeOptions();if([...select.options].some(x=>x.value===selected))select.value=selected;const items=course.resources||[];$('resourceList').innerHTML=items.length?items.map(r=>`<div class="item" oncontextmenu="openResourceContext(event,'${r.id}')" title="Right-click to open in a new tab"><div><b>${escapeHTML(r.name)}</b> <span class="pill">${escapeHTML(r.kind.toUpperCase())}</span><br><small>${escapeHTML(scopeLabel(r.scope))} · ${(r.size/1048576).toFixed(1)} MB · browser storage</small></div><div class="item-actions"><button class="secondary" onclick="relinkResource('${r.id}')">Relink File</button><button onclick="previewResource('${r.id}')">${r.kind==='pdf'?'Open PDF':'Open / Play'}</button><button class="danger" onclick="removeResource('${r.id}')">Remove</button></div></div>`).join(''):'<div class="empty">No resources attached. Files imported on another device need to be relinked locally.</div>'}
+function renderResources(){const select=$('resourceScope');if(!select)return;const selected=select.value;select.innerHTML=scopeOptions();if([...select.options].some(x=>x.value===selected))select.value=selected;const items=course.resources||[];$('resourceList').innerHTML=items.length?items.map(r=>`<div class="item" oncontextmenu="openResourceContext(event,'${r.id}')" title="Right-click to open in a new tab"><div><b>${escapeHTML(mediaDisplayName(r.name))}</b> <span class="pill">${escapeHTML(r.kind.toUpperCase())}</span><br><small>${escapeHTML(scopeLabel(r.scope))} · ${(r.size/1048576).toFixed(1)} MB · browser storage</small></div><div class="item-actions"><button class="secondary" onclick="relinkResource('${r.id}')">Relink File</button><button onclick="previewResource('${r.id}')">${r.kind==='pdf'?'Open PDF':'Open / Play'}</button><button class="danger" onclick="removeResource('${r.id}')">Remove</button></div></div>`).join(''):'<div class="empty">No resources attached. Files imported on another device need to be relinked locally.</div>'}
 
 async function relinkResource(id, onSuccess){
  const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;
@@ -546,7 +548,7 @@ function requestYoutubeTitle(it){const url=it?.url||'',id=youtubeVideoId(url);if
  fetch('https://noembed.com/embed?url='+encodeURIComponent('https://www.youtube.com/watch?v='+id)).then(r=>{if(!r.ok)throw Error('Metadata unavailable');return r.json()}).then(data=>{const title=typeof data.title==='string'?data.title.trim():'';if(!title||it.url!==url)return;it.youtubeTitle=title;it.youtubeTitleUrl=url;markDirty();renderClasses();renderLibrary();renderPracticeResources()}).catch(()=>{if(it.url===url){it.youtubeTitle='YouTube video';it.youtubeTitleUrl=url;renderClasses();renderLibrary();renderPracticeResources()}}).finally(()=>youtubeTitlePending.delete(id));}
 function youtubeLinkLabelHTML(it){const title=itemLinkLabel(it);return youtubeVideoId(it?.url||'')?'<span title="'+escapeHTML(title)+'">'+escapeHTML(compactYoutubeTitle(title))+'</span>':escapeHTML(title)}
 function renderPracticeResources(){const host=$('practiceResources');if(!host)return;const c=selectedClass(),it=selectedItem(),allowed=new Set(['course']);if(c)allowed.add('class:'+c.id);if(it)allowed.add('item:'+it.id);const resources=(course.resources||[]).filter(r=>allowed.has(r.scope)||(it?.linkedResourceIds||[]).includes(r.id));const linked=it?.url?.trim()?`<div class="item"><div><b>${youtubeVideoId(it.url)?youtubeLinkLabelHTML(it):escapeHTML(it.name)}</b></div><div class="item-actions">${youtubeVideoId(it.url)?`<button class="mcb-youtube-btn" onclick="openYoutubeCompanion()">▶ YouTube Player</button>`:`<button class="mcb-link-btn" onclick="openPracticeLink()">Open Link</button><button class="secondary" onclick="importPracticeLinkMedia()">Import to Media Player</button><button class="danger" onclick="removePracticeLink()">Remove Link</button>`}</div></div>`:'';
-host.innerHTML=(resources.length?resources.map(r=>`<div class="item" oncontextmenu="openResourceContext(event,'${r.id}')" title="Right-click to open in a new tab"><div><b>${escapeHTML(r.name)}</b> <span class="pill">${escapeHTML(r.kind)}</span><br><small>${escapeHTML(scopeLabel(r.scope))}</small></div><div class="item-actions"><button class="secondary" onclick="relinkResource('${r.id}')">Relink File</button><button onclick="previewResource('${r.id}',true)">${r.kind==='pdf'?'Open PDF':'Open / Play'}</button><button class="danger" onclick="removeResourceFromPractice('${r.id}')">Remove</button></div></div>`).join('') :'')+linked||'<p class="help">No resources assigned yet. Attach a file here or use the Local Resources tab.</p>'}
+host.innerHTML=(resources.length?resources.map(r=>`<div class="item" oncontextmenu="openResourceContext(event,'${r.id}')" title="Right-click to open in a new tab"><div><b>${escapeHTML(mediaDisplayName(r.name))}</b> <span class="pill">${escapeHTML(r.kind)}</span><br><small>${escapeHTML(scopeLabel(r.scope))}</small></div><div class="item-actions"><button class="secondary" onclick="relinkResource('${r.id}')">Relink File</button><button onclick="previewResource('${r.id}',true)">${r.kind==='pdf'?'Open PDF':'Open / Play'}</button><button class="danger" onclick="removeResourceFromPractice('${r.id}')">Remove</button></div></div>`).join('') :'')+linked||'<p class="help">No resources assigned yet. Attach a file here or use the Local Resources tab.</p>'}
 function removePracticeLink(){
  const it=selectedItem();if(!it?.url)return;
  if(!confirm('Remove the link from this practice item? Imported media files and other attachments will remain.'))return;
@@ -608,39 +610,34 @@ function addMediaControls(media,r,host,file){
  panel.innerHTML=`
  <div class="wave-wrap"><canvas class="wave-canvas" id="waveCanvas" height="130" aria-label="Audio waveform and loop markers"></canvas><div class="wave-zoom-controls"><button type="button" class="secondary" id="waveZoomOut" title="Zoom out">− Zoom</button><button type="button" class="secondary" id="waveZoomIn" title="Zoom around playhead">+ Zoom</button><button type="button" class="secondary" id="waveZoomFit" title="Show the entire recording">Fit All</button><span id="waveZoomLabel">100%</span></div><div id="waveInfo" class="wave-help" aria-live="polite">Analyzing waveform… Drag to scrub; hold Shift and drag to select or adjust loop markers.</div></div>
  <div class="media-control-scroll" aria-label="Media playback controls"><div class="media-control-strip">
- <button type="button" id="mediaPlayPause">▶ Play</button>
- <button type="button" class="secondary" id="mediaPlayStart">⏮ Start</button>
- <button type="button" class="secondary" id="jumpA">Jump to In</button>
- <div class="speed-picker"><button type="button" class="secondary" id="speedButton" aria-haspopup="true" aria-expanded="false">Speed: 1× ▾</button><div id="speedMenu" class="speed-menu" hidden role="group" aria-label="Choose playback speed"></div></div>
+ <button type="button" class="secondary" id="toggleLoop">Enable Loop</button>
+ <button type="button" class="mcb-play-emphasis" id="mediaPlayPause">▶ Play</button>
  <button type="button" class="secondary" id="waveStart">Mark In</button>
  <button type="button" class="secondary" id="waveEnd">Mark Out</button>
- <button type="button" id="toggleLoop">Enable Loop</button>
+ <div class="speed-picker"><button type="button" class="secondary" id="speedButton" aria-haspopup="true" aria-expanded="false">Speed: 1× ▾</button><div id="speedMenu" class="speed-menu" hidden role="group" aria-label="Choose playback speed"></div></div>
+ <button type="button" class="secondary" id="jumpBack">◀ −5s</button>
+ <button type="button" class="secondary" id="jumpForward">+5s ▶</button>
  <button type="button" class="secondary" id="clearLoop">Clear Markers</button>
- <button type="button" class="secondary" id="jumpBack">−5s</button>
- <button type="button" class="secondary" id="jumpForward">+5s</button>
- <div class="help-popover-anchor"><button type="button" class="secondary media-help-btn" id="mediaHelp" aria-label="Hold for media player help" aria-expanded="false">? Help</button></div>
+ <div class="help-popover-anchor"><button type="button" class="secondary media-help-btn" id="mediaHelp" aria-label="Click for media player help" aria-expanded="false">?</button></div>
  <output class="media-timecode" id="mediaTimecode" aria-label="Current time and duration">00:00 / --:--</output>
 
  </div></div>
  <div id="mediaHelpText" class="media-help-text" role="tooltip" hidden>
  <b>Media player help</b>
- <p><b>Play/Pause:</b> Click Play/Pause or press the spacebar when not typing. <b>Start:</b> Play from the beginning. <b>Jump to In:</b> Return to the In marker.</p>
+ <p><b>Play/Pause:</b> Click Play/Pause or press the spacebar when not typing. </p>
  <p><b>Zoom:</b> Use + Zoom to zoom around the playhead, − Zoom to zoom out, Fit All for the complete recording, and the mouse wheel to scroll horizontally while zoomed. Some video codecs cannot be analyzed directly in Chrome.</p>
  <p><b>Waveform:</b> Click to seek. Drag across the waveform to scrub. Hold Shift and drag to select a loop, or Shift-drag the blue In or orange Out marker to fine-tune the selection. Alternatively, seek and click Mark In or Mark Out to place a marker at the playhead.</p>
- <p><b>Enable Loop:</b> Repeat the selected passage. Clear Markers removes the selection. The −5s and +5s buttons seek five seconds. Hold the Help button to read these instructions; release to close. The Speed dropdown changes playback rate; the browser preserves original pitch where supported.</p>
+ <p><b>Enable Loop:</b> Repeat the selected passage. Clear Markers removes the selection. The −5s and +5s buttons seek five seconds. Click ? to show or hide these instructions. The Speed dropdown changes playback rate; the browser preserves original pitch where supported.</p>
  <p><b>Floating and sizing:</b> Use Float Player, then drag its title bar to reposition it. Drag the outer bottom-right corner to resize the player. Drag the labeled horizontal divider between video and waveform to make the video larger or smaller, when the player is floating. You can also focus the divider and press the up/down arrow keys. For video, Float Player opens a separate always-on-top Chrome window that can move between monitors; browser-enforced size limits still apply.</p>
  <p>The timecode next to Help shows elapsed time / total duration. In floating video, Full Screen is hidden; use Dock Player to return to the normal view before using Full Screen. Speed and loop markers are saved with the resource. Audio floats with compact controls for PDF practice. Video floats in a separate movable, resizable window. V45 restores the original V37 waveform decoder for supported files in Normal Size. Float hides the waveform to keep video practice responsive. Zoom with +/−, Fit All, or scroll the zoomed waveform.</p>
  </div>`;
  host.appendChild(panel);
- const compactLabels={mediaPlayPause:'Play or pause',mediaPlayStart:'Start from beginning',jumpA:'Jump to In marker',speedButton:'Playback speed',waveStart:'Mark In',waveEnd:'Mark Out',toggleLoop:'Toggle loop',clearLoop:'Clear markers',jumpBack:'Back 5 seconds',jumpForward:'Forward 5 seconds',mediaHelp:'Hold for help'};
+ const compactLabels={mediaPlayPause:'Play or pause',speedButton:'Playback speed',waveStart:'Mark In',waveEnd:'Mark Out',toggleLoop:'Toggle loop',clearLoop:'Clear markers',jumpBack:'Back 5 seconds',jumpForward:'Forward 5 seconds',mediaHelp:'Click for help'};
  for(const [id,label] of Object.entries(compactLabels)){const button=panel.querySelector('#'+id);if(button){button.title=label;button.setAttribute('aria-label',label)}}
  const helpBtn=panel.querySelector('#mediaHelp'),helpText=panel.querySelector('#mediaHelpText');
  function showHelp(){helpText.hidden=false;helpBtn.setAttribute('aria-expanded','true')}
  function hideHelp(){helpText.hidden=true;helpBtn.setAttribute('aria-expanded','false')}
- helpBtn.addEventListener('pointerdown',e=>{showHelp();if(e.pointerType!=='mouse')e.preventDefault()});
- for(const eventName of ['pointerup','pointercancel','pointerleave','blur'])helpBtn.addEventListener(eventName,hideHelp);
- helpBtn.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();showHelp()}});
- helpBtn.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();hideHelp()}});
+ helpBtn.addEventListener('click',()=>helpText.hidden?showHelp():hideHelp());
  const timecode=panel.querySelector('#mediaTimecode');
  function updateTimecode(){timecode.textContent=mediaTime(media.currentTime||0)+' / '+mediaTime(media.duration)}
  media.addEventListener('timeupdate',updateTimecode);media.addEventListener('loadedmetadata',updateTimecode);media.addEventListener('durationchange',updateTimecode);updateTimecode();
@@ -797,8 +794,8 @@ function addMediaControls(media,r,host,file){
  playPause.onclick=togglePlayback;
  media.addEventListener('play',updatePlayPause);media.addEventListener('pause',updatePlayPause);media.addEventListener('ended',updatePlayPause);
  activePlaybackToggle=togglePlayback;activePlaybackMedia=media;updatePlayPause();
- q('mediaPlayStart').onclick=()=>{media.pause();if(state.loop){state.loop=false;save()}media.currentTime=0;draw();media.play().catch(err=>console.warn('Playback could not start',err))};
- q('jumpA').onclick=()=>{if(state.a!==null)media.currentTime=state.a};
+ 
+ 
  q('jumpBack').onclick=()=>{media.currentTime=Math.max(0,media.currentTime-5)};
  q('jumpForward').onclick=()=>{media.currentTime=Math.min(Number.isFinite(media.duration)?media.duration:Infinity,media.currentTime+5)};
  media.addEventListener('timeupdate',()=>{if(state.loop&&valid()&&media.currentTime>=state.b-.04)media.currentTime=state.a;draw()});
@@ -850,7 +847,7 @@ function makePdfViewer(file,r,host){
  activePdfURL=URL.createObjectURL(pdf);
  const panel=document.createElement('section');panel.className='pdf-workspace';
  const bar=document.createElement('div');bar.className='pdf-bar';
- const title=document.createElement('strong');title.textContent=r.name;
+ const title=document.createElement('strong');title.textContent=mediaDisplayName(r.name);
  const full=document.createElement('button');full.type='button';full.textContent='Full Screen';full.className='secondary';
  full.onclick=async()=>{try{if(document.fullscreenElement===panel)await document.exitFullscreen();else {await panel.requestFullscreen();bringPlayerIntoFullscreen(panel)}}catch(e){alert('Full screen is unavailable: '+e.message)}};
  const download=document.createElement('a');download.textContent='Download PDF';download.href=activePdfURL;download.download=r.name;download.className='secondary';download.style.cssText='padding:8px 12px;border:1px solid #b7c7d9;border-radius:6px;text-decoration:none';
@@ -970,7 +967,7 @@ document.addEventListener('keydown',e=>{
 function makeMediaViewer(file,r,host){
  closeMedia();activeMediaURL=URL.createObjectURL(file);
  const bar=document.createElement('div');bar.className='media-topbar';
- const title=document.createElement('strong');title.textContent=r.name;
+ const title=document.createElement('strong');title.textContent=mediaDisplayName(r.name);
  const isVideo=r.kind==='video';
  const float=document.createElement('button');float.className='secondary';float.textContent='Float Player';
  float.title=isVideo?'Open a separate always-on-top video window; drag the window between monitors and resize its edges':'Float compact MP3 controls over the PDF';
@@ -1054,7 +1051,7 @@ async function openResourceContext(event,id){
 }
 window.addEventListener('pagehide',()=>resourceTabURLs.forEach(url=>URL.revokeObjectURL(url)));
 
-async function previewResource(id,inPractice=false){const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;let file;try{file=await mediaGet(id)}catch(e){alert('Could not read media: '+e.message);return}if(!file){offerMissingMediaRelink(id,()=>previewResource(id,inPractice));return}const host=$(inPractice?'practiceMediaPreview':'resourcePreview');$('resourcePreviewTitle').textContent=r.name;if(!inPractice)$('resourcePreviewCard').hidden=false;try{if(r.kind==='pdf'){makePdfViewer(file,r,$(inPractice?'practicePdfPreview':'resourcePdfPreview'))}else{makeMediaViewer(file,r,host)}}catch(e){alert('Unable to open '+r.name+': '+e.message);console.error(e);return}if(r.kind!=='video'){if(!inPractice)$('resourcePreviewCard').scrollIntoView({behavior:'smooth',block:'start'});else (r.kind==='pdf'?$(inPractice?'practicePdfPreview':'resourcePdfPreview'):host).scrollIntoView({behavior:'smooth',block:'nearest'})}}
+async function previewResource(id,inPractice=false){const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;let file;try{file=await mediaGet(id)}catch(e){alert('Could not read media: '+e.message);return}if(!file){offerMissingMediaRelink(id,()=>previewResource(id,inPractice));return}const host=$(inPractice?'practiceMediaPreview':'resourcePreview');$('resourcePreviewTitle').textContent=mediaDisplayName(r.name);if(!inPractice)$('resourcePreviewCard').hidden=false;try{if(r.kind==='pdf'){makePdfViewer(file,r,$(inPractice?'practicePdfPreview':'resourcePdfPreview'))}else{makeMediaViewer(file,r,host)}}catch(e){alert('Unable to open '+r.name+': '+e.message);console.error(e);return}if(r.kind!=='video'){if(!inPractice)$('resourcePreviewCard').scrollIntoView({behavior:'smooth',block:'start'});else (r.kind==='pdf'?$(inPractice?'practicePdfPreview':'resourcePdfPreview'):host).scrollIntoView({behavior:'smooth',block:'nearest'})}}
 async function removeResource(id){const uses=course.classes.flatMap(c=>c.items||[]).filter(it=>(it.linkedResourceIds||[]).includes(id));if(!confirm(uses.length?'This resource is linked to '+uses.length+' practice item(s). Delete it from the library and all those items?':'Remove this resource?'))return;for(const c of course.classes)for(const it of c.items||[])it.linkedResourceIds=(it.linkedResourceIds||[]).filter(x=>x!==id);course.resources=course.resources.filter(r=>r.id!==id);try{await mediaDelete(id)}catch(e){}closePreview();markDirty();renderResources();renderPracticeResources();renderClasses();renderClasses()}
 
 function classResourceSummary(c){
@@ -1062,7 +1059,7 @@ function classResourceSummary(c){
  const assigned=(course.resources||[]).filter(r=>r.scope==='course'||r.scope===classScope||itemScopes.has(r.scope));
  const linked=(c.items||[]).filter(it=>it.url?.trim());
  if(!assigned.length&&!linked.length)return '<p class="help">No files or links assigned yet. Use Attach Files or add a practice item link.</p>';
- const files=assigned.map(r=>`<div class="class-resource-entry"><span>${escapeHTML(r.name)} <small>(${escapeHTML(scopeLabel(r.scope))})</small></span><button class="secondary" onclick="openClassResource('${c.id}','${r.id}')">Open in Practice Room</button></div>`).join('');
+ const files=assigned.map(r=>`<div class="class-resource-entry"><span>${escapeHTML(mediaDisplayName(r.name))} <small>(${escapeHTML(scopeLabel(r.scope))})</small></span><button class="secondary" onclick="openClassResource('${c.id}','${r.id}')">Open in Practice Room</button></div>`).join('');
  const links=linked.map(it=>`<div class="class-resource-entry"><span>${youtubeVideoId(it.url)?youtubeLinkLabelHTML(it):escapeHTML(it.name)} </span><button class="secondary" onclick="openClassPracticeLink('${c.id}','${it.id}')">${youtubeVideoId(it.url)?'▶ YouTube Player':'Open in Practice Room'}</button></div>`).join('');
  return files+links;
 }
