@@ -218,7 +218,7 @@ label{display:block;font-weight:650;font-size:13px;margin:0 0 5px}input,select,t
 </style>
 </head>
 <body>
-<header><h1>Music Course Builder</h1><p>Build a course, organize classes, and plan focused practice — V55.7.10 · YouTube Titles (beta)</p></header>
+<header><h1>Music Course Builder</h1><p>Build a course, organize classes, and plan focused practice — V55.7.12 · YouTube Titles</p></header>
 <main>
   <div class="card" id="cloudPanel" style="margin-bottom:14px">
     <h2>Private Cloud Course Library <small style="font-weight:normal">V55.6 beta</small></h2>
@@ -539,12 +539,13 @@ bindDropzone('libraryDrop','resourceFiles',files=>attachFiles(files,$('resourceS
 bindDropzone('practiceDrop','practiceFileInput',files=>attachFiles(files,practiceScope(),'practiceResourceMessage'));
 // YouTube display titles: URLs remain stored for playback, never used as labels.
 const youtubeTitlePending=new Set();
+function compactYoutubeTitle(title){return title.length>25?title.slice(0,25).trimEnd()+'…':title}
 function youtubeVideoId(raw){try{const u=new URL(raw);let id=null;if(['youtu.be','www.youtu.be'].includes(u.hostname))id=u.pathname.split('/')[1];else if(['youtube.com','www.youtube.com','m.youtube.com','www.youtube-nocookie.com'].includes(u.hostname))id=u.searchParams.get('v')||u.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1];return id&&/^[\w-]{11}$/.test(id)?id:null}catch{return null}}
 function itemLinkLabel(it){if(!youtubeVideoId(it?.url||''))return it?.url||'';if(it.youtubeTitleUrl===it.url&&it.youtubeTitle)return it.youtubeTitle;requestYoutubeTitle(it);return 'YouTube video (title loading…)'}
 function requestYoutubeTitle(it){const url=it?.url||'',id=youtubeVideoId(url);if(!id||youtubeTitlePending.has(id)||it.youtubeTitleUrl===url&&it.youtubeTitle)return;youtubeTitlePending.add(id);
  fetch('https://noembed.com/embed?url='+encodeURIComponent('https://www.youtube.com/watch?v='+id)).then(r=>{if(!r.ok)throw Error('Metadata unavailable');return r.json()}).then(data=>{const title=typeof data.title==='string'?data.title.trim():'';if(!title||it.url!==url)return;it.youtubeTitle=title;it.youtubeTitleUrl=url;markDirty();renderClasses();renderLibrary();renderPracticeResources()}).catch(()=>{if(it.url===url){it.youtubeTitle='YouTube video';it.youtubeTitleUrl=url;renderClasses();renderLibrary();renderPracticeResources()}}).finally(()=>youtubeTitlePending.delete(id));}
-function youtubeLinkLabelHTML(it){return escapeHTML(itemLinkLabel(it))}
-function renderPracticeResources(){const host=$('practiceResources');if(!host)return;const c=selectedClass(),it=selectedItem(),allowed=new Set(['course']);if(c)allowed.add('class:'+c.id);if(it)allowed.add('item:'+it.id);const resources=(course.resources||[]).filter(r=>allowed.has(r.scope)||(it?.linkedResourceIds||[]).includes(r.id));const linked=it?.url?.trim()?`<div class="item"><div><b>${escapeHTML(it.name)} — linked resource</b><br><small>${youtubeLinkLabelHTML(it)}</small></div><div class="item-actions"><button class="mcb-youtube-btn" onclick="openYoutubeCompanion()">▶ YouTube Player</button><button class="mcb-link-btn" onclick="openPracticeLink()">Open Link</button><button class="secondary" onclick="importPracticeLinkMedia()">Import to Media Player</button><button class="danger" onclick="removePracticeLink()">Remove Link</button></div></div>`:'';
+function youtubeLinkLabelHTML(it){const title=itemLinkLabel(it);return youtubeVideoId(it?.url||'')?'<span title="'+escapeHTML(title)+'">'+escapeHTML(compactYoutubeTitle(title))+'</span>':escapeHTML(title)}
+function renderPracticeResources(){const host=$('practiceResources');if(!host)return;const c=selectedClass(),it=selectedItem(),allowed=new Set(['course']);if(c)allowed.add('class:'+c.id);if(it)allowed.add('item:'+it.id);const resources=(course.resources||[]).filter(r=>allowed.has(r.scope)||(it?.linkedResourceIds||[]).includes(r.id));const linked=it?.url?.trim()?`<div class="item"><div><b>${youtubeVideoId(it.url)?youtubeLinkLabelHTML(it):escapeHTML(it.name)} — linked resource</b></div><div class="item-actions"><button class="mcb-youtube-btn" onclick="openYoutubeCompanion()">▶ YouTube Player</button><button class="mcb-link-btn" onclick="openPracticeLink()">Open Link</button><button class="secondary" onclick="importPracticeLinkMedia()">Import to Media Player</button><button class="danger" onclick="removePracticeLink()">Remove Link</button></div></div>`:'';
 host.innerHTML=(resources.length?resources.map(r=>`<div class="item" oncontextmenu="openResourceContext(event,'${r.id}')" title="Right-click to open in a new tab"><div><b>${escapeHTML(r.name)}</b> <span class="pill">${escapeHTML(r.kind)}</span><br><small>${escapeHTML(scopeLabel(r.scope))}</small></div><div class="item-actions"><button class="secondary" onclick="relinkResource('${r.id}')">Relink File</button><button onclick="previewResource('${r.id}',true)">${r.kind==='pdf'?'Open PDF':'Open / Play'}</button><button class="danger" onclick="removeResourceFromPractice('${r.id}')">Remove</button></div></div>`).join('') :'')+linked||'<p class="help">No resources assigned yet. Attach a file here or use the Local Resources tab.</p>'}
 function removePracticeLink(){
  const it=selectedItem();if(!it?.url)return;
@@ -605,7 +606,7 @@ function mediaTime(t){if(!Number.isFinite(t))return '--:--';const m=Math.floor(t
 function addMediaControls(media,r,host,file){
  const panel=document.createElement('div');panel.className='media-tools';
  panel.innerHTML=`
- <div class="wave-wrap"><canvas class="wave-canvas" id="waveCanvas" height="130" aria-label="Audio waveform and loop markers"></canvas><div class="wave-zoom-controls"><button type="button" class="secondary" id="waveZoomOut" title="Zoom out">− Zoom</button><button type="button" class="secondary" id="waveZoomIn" title="Zoom around playhead">+ Zoom</button><button type="button" class="secondary" id="waveZoomFit" title="Show the entire recording">Fit All</button><span id="waveZoomLabel">100%</span></div><div id="waveInfo" class="wave-help" aria-live="polite">Analyzing waveform… Hold Shift and drag to scrub without changing loop markers.</div></div>
+ <div class="wave-wrap"><canvas class="wave-canvas" id="waveCanvas" height="130" aria-label="Audio waveform and loop markers"></canvas><div class="wave-zoom-controls"><button type="button" class="secondary" id="waveZoomOut" title="Zoom out">− Zoom</button><button type="button" class="secondary" id="waveZoomIn" title="Zoom around playhead">+ Zoom</button><button type="button" class="secondary" id="waveZoomFit" title="Show the entire recording">Fit All</button><span id="waveZoomLabel">100%</span></div><div id="waveInfo" class="wave-help" aria-live="polite">Analyzing waveform… Drag to scrub; hold Shift and drag to select or adjust loop markers.</div></div>
  <div class="media-control-scroll" aria-label="Media playback controls"><div class="media-control-strip">
  <button type="button" id="mediaPlayPause">▶ Play</button>
  <button type="button" class="secondary" id="mediaPlayStart">⏮ Start</button>
@@ -625,7 +626,7 @@ function addMediaControls(media,r,host,file){
  <b>Media player help</b>
  <p><b>Play/Pause:</b> Click Play/Pause or press the spacebar when not typing. <b>Start:</b> Play from the beginning. <b>Jump to In:</b> Return to the In marker.</p>
  <p><b>Zoom:</b> Use + Zoom to zoom around the playhead, − Zoom to zoom out, Fit All for the complete recording, and the mouse wheel to scroll horizontally while zoomed. Some video codecs cannot be analyzed directly in Chrome.</p>
- <p><b>Waveform:</b> Click to seek. Click, hold and drag across the waveform to select a loop. Drag the blue In or orange Out marker to fine-tune the selection. Alternatively, seek and click Mark In or Mark Out to place a marker at the playhead.</p>
+ <p><b>Waveform:</b> Click to seek. Drag across the waveform to scrub. Hold Shift and drag to select a loop, or Shift-drag the blue In or orange Out marker to fine-tune the selection. Alternatively, seek and click Mark In or Mark Out to place a marker at the playhead.</p>
  <p><b>Enable Loop:</b> Repeat the selected passage. Clear Markers removes the selection. The −5s and +5s buttons seek five seconds. Hold the Help button to read these instructions; release to close. The Speed dropdown changes playback rate; the browser preserves original pitch where supported.</p>
  <p><b>Floating and sizing:</b> Use Float Player, then drag its title bar to reposition it. Drag the outer bottom-right corner to resize the player. Drag the labeled horizontal divider between video and waveform to make the video larger or smaller, when the player is floating. You can also focus the divider and press the up/down arrow keys. For video, Float Player opens a separate always-on-top Chrome window that can move between monitors; browser-enforced size limits still apply.</p>
  <p>The timecode next to Help shows elapsed time / total duration. In floating video, Full Screen is hidden; use Dock Player to return to the normal view before using Full Screen. Speed and loop markers are saved with the resource. Audio floats with compact controls for PDF practice. Video floats in a separate movable, resizable window. V45 restores the original V37 waveform decoder for supported files in Normal Size. Float hides the waveform to keep video practice responsive. Zoom with +/−, Fit All, or scroll the zoomed waveform.</p>
@@ -718,7 +719,7 @@ function addMediaControls(media,r,host,file){
   if(!waveDuration())return;
   const t=waveTime(e),tol=12/canvas.getBoundingClientRect().width*visibleDuration();
   const nearA=state.a!==null&&Math.abs(t-state.a)<tol,nearB=state.b!==null&&Math.abs(t-state.b)<tol;
-  waveDrag=e.shiftKey?'scrub':nearA&&nearB?(Math.abs(t-state.a)<=Math.abs(t-state.b)?'a':'b'):nearA?'a':nearB?'b':'range';
+  waveDrag=!e.shiftKey?'scrub':nearA&&nearB?(Math.abs(t-state.a)<=Math.abs(t-state.b)?'a':'b'):nearA?'a':nearB?'b':'range';
   dragStart=t;dragMoved=false;canvas.setPointerCapture(e.pointerId);
   if(waveDrag==='scrub'){media.currentTime=t;draw();}
  });
@@ -811,7 +812,7 @@ let activePlaybackToggle=null,activePlaybackMedia=null;
 document.addEventListener('keydown',event=>{
  if(event.code!=='Space'||event.repeat||event.altKey||event.ctrlKey||event.metaKey||!activePlaybackToggle||!activePlaybackMedia?.isConnected)return;
  const target=event.target;
- if(target?.closest?.('input,textarea,select,button,[contenteditable="true"],[role="textbox"]'))return;
+ if(target?.closest?.('input,textarea,select,[contenteditable="true"],[role="textbox"]'))return;
  event.preventDefault();activePlaybackToggle();
 });
 function closePdf(){if(document.fullscreenElement?.classList.contains('pdf-workspace'))document.exitFullscreen().catch(()=>{});if(fullscreenPlayerRestore)fullscreenPlayerRestore();$('practicePdfPreview').replaceChildren();$('resourcePdfPreview').replaceChildren();if(activePdfURL){URL.revokeObjectURL(activePdfURL);activePdfURL=null}}
@@ -1062,7 +1063,7 @@ function classResourceSummary(c){
  const linked=(c.items||[]).filter(it=>it.url?.trim());
  if(!assigned.length&&!linked.length)return '<p class="help">No files or links assigned yet. Use Attach Files or add a practice item link.</p>';
  const files=assigned.map(r=>`<div class="class-resource-entry"><span>${escapeHTML(r.name)} <small>(${escapeHTML(scopeLabel(r.scope))})</small></span><button class="secondary" onclick="openClassResource('${c.id}','${r.id}')">Open in Practice Room</button></div>`).join('');
- const links=linked.map(it=>`<div class="class-resource-entry"><span>${escapeHTML(it.name)} <small>(linked resource)</small></span><button class="secondary" onclick="openClassPracticeLink('${c.id}','${it.id}')">Open in Practice Room</button></div>`).join('');
+ const links=linked.map(it=>`<div class="class-resource-entry"><span>${youtubeVideoId(it.url)?youtubeLinkLabelHTML(it):escapeHTML(it.name)} <small>(linked resource)</small></span><button class="secondary" onclick="openClassPracticeLink('${c.id}','${it.id}')">Open in Practice Room</button></div>`).join('');
  return files+links;
 }
 function openClassResource(classId,resourceId){
