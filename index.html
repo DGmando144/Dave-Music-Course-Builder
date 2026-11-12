@@ -454,7 +454,7 @@ function attachToClass(id){switchTab('resources');$('resourceScope').value='clas
 function attachToItem(cid,id){switchTab('resources');$('resourceScope').value='item:'+id;$('resourceFiles').click()}
 function renderResources(){const select=$('resourceScope');if(!select)return;const selected=select.value;select.innerHTML=scopeOptions();if([...select.options].some(x=>x.value===selected))select.value=selected;const items=course.resources||[];$('resourceList').innerHTML=items.length?items.map(r=>`<div class="item" oncontextmenu="openResourceContext(event,'${r.id}')" title="Right-click to open in a new tab"><div><b>${escapeHTML(r.name)}</b> <span class="pill">${escapeHTML(r.kind.toUpperCase())}</span><br><small>${escapeHTML(scopeLabel(r.scope))} · ${(r.size/1048576).toFixed(1)} MB · browser storage</small></div><div class="item-actions"><button class="secondary" onclick="relinkResource('${r.id}')">Relink File</button><button onclick="previewResource('${r.id}')">${r.kind==='pdf'?'Open PDF':'Open / Play'}</button><button class="danger" onclick="removeResource('${r.id}')">Remove</button></div></div>`).join(''):'<div class="empty">No resources attached. Files imported on another device need to be relinked locally.</div>'}
 
-async function relinkResource(id){
+async function relinkResource(id, onSuccess){
  const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;
  const picker=document.createElement('input');picker.type='file';picker.accept=r.kind==='pdf'?'.pdf,application/pdf':r.kind==='audio'?'audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac':'video/*,.mp4,.webm,.mov,.m4v';
  picker.onchange=async()=>{
@@ -462,10 +462,37 @@ async function relinkResource(id){
   const kind=resourceType(file);
   if(kind!==r.kind){alert('Please choose a '+r.kind+' file for this resource.');return}
   if(file.name!==r.name&&!confirm('This file is named "'+file.name+'" but the linked resource is "'+r.name+'". Use it anyway?'))return;
-  try{await mediaPut(id,file);$('resourceMessage').textContent='File relinked on this device: '+r.name+'. You can now open/play it. The file itself is not uploaded to Firebase.';renderResources();renderPracticeResources();}
+  try{await mediaPut(id,file);$('resourceMessage').textContent='File relinked on this device: '+r.name+'. You can now open/play it. The file itself is not uploaded to Firebase.';renderResources();renderPracticeResources();if(typeof onSuccess==='function')onSuccess();}
   catch(e){alert('Could not relink file: '+e.message)}
  };
  picker.click();
+}
+// V55.7.9: Missing-media assistance; iOS Files/Google Drive search is OS-controlled.
+async function copyMissingFilename(name, feedback){
+ try{await navigator.clipboard.writeText(name);if(feedback)feedback.textContent='Filename copied. Paste it into the Files / Google Drive search bar.';return true}
+ catch(e){if(feedback)feedback.textContent='Clipboard unavailable. Select and copy the filename above.';return false}
+}
+function offerMissingMediaRelink(id, onSuccess){
+ const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;
+ document.getElementById('mcbMissingMediaDialog')?.remove();
+ const overlay=document.createElement('div');overlay.id='mcbMissingMediaDialog';
+ overlay.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#091626a8;display:flex;align-items:center;justify-content:center;padding:16px';
+ const panel=document.createElement('div');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','Media file unavailable');
+ panel.style.cssText='background:white;color:#203047;width:min(520px,100%);padding:20px;border-radius:12px;box-shadow:0 10px 40px #0006';
+ const title=document.createElement('h3');title.textContent='Media file unavailable';
+ const desc=document.createElement('p');desc.textContent='This course references a file that is not available on this device. Search for the filename in Google Drive or iCloud Drive, then select the matching file.';
+ const label=document.createElement('label');label.textContent='Missing filename';
+ const name=document.createElement('input');name.type='text';name.readOnly=true;name.value=r.name;name.style.cssText='width:100%;margin:6px 0 12px';name.onclick=()=>name.select();
+ const msg=document.createElement('p');msg.style.cssText='font-size:13px;color:#52677b;min-height:20px';msg.textContent='On iPhone/iPad, the system file picker search cannot be filled automatically.';
+ const buttons=document.createElement('div');buttons.style.cssText='display:flex;gap:8px;flex-wrap:wrap';
+ const copy=document.createElement('button');copy.textContent='Copy Filename';copy.className='secondary';copy.onclick=()=>copyMissingFilename(r.name,msg);
+ const relink=document.createElement('button');relink.textContent='Relink This File';relink.onclick=()=>{overlay.remove();relinkResource(id,onSuccess)};
+ const both=document.createElement('button');both.textContent='Copy Filename & Relink';both.onclick=()=>{ // keep the file picker directly tied to the user gesture
+   navigator.clipboard?.writeText(r.name).catch(()=>{});overlay.remove();relinkResource(id,onSuccess);
+ };
+ const cancel=document.createElement('button');cancel.className='secondary';cancel.textContent='Not Now';cancel.onclick=()=>overlay.remove();
+ buttons.append(copy,relink,both,cancel);panel.append(title,desc,label,name,msg,buttons);overlay.append(panel);document.body.append(overlay);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
 }
 // V55.6: Device-local folder access; course metadata stays in Firebase.
 const MEDIA_FOLDER_DB='mcb-media-folder-v556',MEDIA_FOLDER_KEY='designated-folder';
@@ -1005,7 +1032,7 @@ async function openResourceContext(event,id){
    tab.document.title='Opening '+r.name;
    tab.document.body.textContent='Loading local resource…';
    const file=await mediaGet(id);
-   if(!file){tab.document.body.textContent='File not available in this browser. Reattach the original resource.';return}
+   if(!file){tab.close();offerMissingMediaRelink(id,()=>previewResource(id));return}
    if(r.kind==='pdf'&&location.protocol==='file:'){
     tab.document.body.textContent='Chrome may not open PDF blob:null URLs from a local file. Use the Windows launcher to run the Course Builder at http://localhost:8765, or use Download PDF in the PDF viewer.';
     return;
@@ -1019,7 +1046,7 @@ async function openResourceContext(event,id){
 }
 window.addEventListener('pagehide',()=>resourceTabURLs.forEach(url=>URL.revokeObjectURL(url)));
 
-async function previewResource(id,inPractice=false){const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;let file;try{file=await mediaGet(id)}catch(e){alert('Could not read media: '+e.message);return}if(!file){alert('Media is not available in this browser. Reattach the original file.');return}const host=$(inPractice?'practiceMediaPreview':'resourcePreview');$('resourcePreviewTitle').textContent=r.name;if(!inPractice)$('resourcePreviewCard').hidden=false;try{if(r.kind==='pdf'){makePdfViewer(file,r,$(inPractice?'practicePdfPreview':'resourcePdfPreview'))}else{makeMediaViewer(file,r,host)}}catch(e){alert('Unable to open '+r.name+': '+e.message);console.error(e);return}if(r.kind!=='video'){if(!inPractice)$('resourcePreviewCard').scrollIntoView({behavior:'smooth',block:'start'});else (r.kind==='pdf'?$(inPractice?'practicePdfPreview':'resourcePdfPreview'):host).scrollIntoView({behavior:'smooth',block:'nearest'})}}
+async function previewResource(id,inPractice=false){const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;let file;try{file=await mediaGet(id)}catch(e){alert('Could not read media: '+e.message);return}if(!file){offerMissingMediaRelink(id,()=>previewResource(id,inPractice));return}const host=$(inPractice?'practiceMediaPreview':'resourcePreview');$('resourcePreviewTitle').textContent=r.name;if(!inPractice)$('resourcePreviewCard').hidden=false;try{if(r.kind==='pdf'){makePdfViewer(file,r,$(inPractice?'practicePdfPreview':'resourcePdfPreview'))}else{makeMediaViewer(file,r,host)}}catch(e){alert('Unable to open '+r.name+': '+e.message);console.error(e);return}if(r.kind!=='video'){if(!inPractice)$('resourcePreviewCard').scrollIntoView({behavior:'smooth',block:'start'});else (r.kind==='pdf'?$(inPractice?'practicePdfPreview':'resourcePdfPreview'):host).scrollIntoView({behavior:'smooth',block:'nearest'})}}
 async function removeResource(id){const uses=course.classes.flatMap(c=>c.items||[]).filter(it=>(it.linkedResourceIds||[]).includes(id));if(!confirm(uses.length?'This resource is linked to '+uses.length+' practice item(s). Delete it from the library and all those items?':'Remove this resource?'))return;for(const c of course.classes)for(const it of c.items||[])it.linkedResourceIds=(it.linkedResourceIds||[]).filter(x=>x!==id);course.resources=course.resources.filter(r=>r.id!==id);try{await mediaDelete(id)}catch(e){}closePreview();markDirty();renderResources();renderPracticeResources();renderClasses();renderClasses()}
 
 function classResourceSummary(c){
