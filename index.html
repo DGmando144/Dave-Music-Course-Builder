@@ -610,11 +610,14 @@ function addMediaControls(media,r,host,file){
  panel.innerHTML=`
  <div class="wave-wrap"><canvas class="wave-canvas" id="waveCanvas" height="130" aria-label="Audio waveform and loop markers"></canvas><div class="wave-zoom-controls"><button type="button" class="secondary" id="waveZoomOut" title="Zoom out">− Zoom</button><button type="button" class="secondary" id="waveZoomIn" title="Zoom around playhead">+ Zoom</button><button type="button" class="secondary" id="waveZoomFit" title="Show the entire recording">Fit All</button><span id="waveZoomLabel">100%</span></div><div id="waveInfo" class="wave-help" aria-live="polite">Analyzing waveform… Drag to scrub; hold Shift and drag to select or adjust loop markers.</div></div>
  <div class="media-control-scroll" aria-label="Media playback controls"><div class="media-control-strip">
+ <button type="button" class="secondary" id="jumpToIn">Jump to In</button>
  <button type="button" class="secondary" id="toggleLoop">Enable Loop</button>
  <button type="button" class="mcb-play-emphasis" id="mediaPlayPause">▶ Play</button>
  <button type="button" class="secondary" id="waveStart">Mark In</button>
  <button type="button" class="secondary" id="waveEnd">Mark Out</button>
  <div class="speed-picker"><button type="button" class="secondary" id="speedButton" aria-haspopup="true" aria-expanded="false">Speed: 1× ▾</button><div id="speedMenu" class="speed-menu" hidden role="group" aria-label="Choose playback speed"></div></div>
+ <button type="button" class="secondary" id="nudgeLeft">◀ Nudge</button>
+ <button type="button" class="secondary" id="nudgeRight">Nudge ▶</button>
  <button type="button" class="secondary" id="jumpBack">◀ −5s</button>
  <button type="button" class="secondary" id="jumpForward">+5s ▶</button>
  <button type="button" class="secondary" id="clearLoop">Clear Markers</button>
@@ -627,12 +630,12 @@ function addMediaControls(media,r,host,file){
  <p><b>Play/Pause:</b> Click Play/Pause or press the spacebar when not typing. </p>
  <p><b>Zoom:</b> Use + Zoom to zoom around the playhead, − Zoom to zoom out, Fit All for the complete recording, and the mouse wheel to scroll horizontally while zoomed. Some video codecs cannot be analyzed directly in Chrome.</p>
  <p><b>Waveform:</b> Click to seek. Drag across the waveform to scrub. Hold Shift and drag to select a loop, or Shift-drag the blue In or orange Out marker to fine-tune the selection. Alternatively, seek and click Mark In or Mark Out to place a marker at the playhead.</p>
- <p><b>Enable Loop:</b> Repeat the selected passage. Clear Markers removes the selection. The −5s and +5s buttons seek five seconds. Click ? to show or hide these instructions. The Speed dropdown changes playback rate; the browser preserves original pitch where supported.</p>
+ <p><b>Enable Loop:</b> Repeat the selected passage. Clear Markers removes the selection. Jump to In returns to the IN marker. Nudge Left/Right move only the playhead by 0.05 seconds without changing markers. The −5s and +5s buttons seek five seconds. Click ? to show or hide these instructions. The Speed dropdown changes playback rate; the browser preserves original pitch where supported.</p>
  <p><b>Floating and sizing:</b> Use Float Player, then drag its title bar to reposition it. Drag the outer bottom-right corner to resize the player. Drag the labeled horizontal divider between video and waveform to make the video larger or smaller, when the player is floating. You can also focus the divider and press the up/down arrow keys. For video, Float Player opens a separate always-on-top Chrome window that can move between monitors; browser-enforced size limits still apply.</p>
  <p>The timecode next to Help shows elapsed time / total duration. In floating video, Full Screen is hidden; use Dock Player to return to the normal view before using Full Screen. Speed and loop markers are saved with the resource. Audio floats with compact controls for PDF practice. Video floats in a separate movable, resizable window. V45 restores the original V37 waveform decoder for supported files in Normal Size. Float hides the waveform to keep video practice responsive. Zoom with +/−, Fit All, or scroll the zoomed waveform.</p>
  </div>`;
  host.appendChild(panel);
- const compactLabels={mediaPlayPause:'Play or pause',speedButton:'Playback speed',waveStart:'Mark In',waveEnd:'Mark Out',toggleLoop:'Toggle loop',clearLoop:'Clear markers',jumpBack:'Back 5 seconds',jumpForward:'Forward 5 seconds',mediaHelp:'Click for help'};
+ const compactLabels={mediaPlayPause:'Play or pause',speedButton:'Playback speed',waveStart:'Mark In',waveEnd:'Mark Out',toggleLoop:'Toggle loop',jumpToIn:'Jump to In marker',nudgeLeft:'Nudge playback backward 0.05 seconds',nudgeRight:'Nudge playback forward 0.05 seconds',clearLoop:'Clear markers',jumpBack:'Back 5 seconds',jumpForward:'Forward 5 seconds',mediaHelp:'Click for help'};
  for(const [id,label] of Object.entries(compactLabels)){const button=panel.querySelector('#'+id);if(button){button.title=label;button.setAttribute('aria-label',label)}}
  const helpBtn=panel.querySelector('#mediaHelp'),helpText=panel.querySelector('#mediaHelpText');
  function showHelp(){helpText.hidden=false;helpBtn.setAttribute('aria-expanded','true')}
@@ -796,6 +799,9 @@ function addMediaControls(media,r,host,file){
  activePlaybackToggle=togglePlayback;activePlaybackMedia=media;updatePlayPause();
  
  
+ q('jumpToIn').onclick=()=>{if(state.a!==null)media.currentTime=state.a};
+ q('nudgeLeft').onclick=()=>{media.currentTime=Math.max(0,media.currentTime-0.05)};
+ q('nudgeRight').onclick=()=>{media.currentTime=Math.min(Number.isFinite(media.duration)?media.duration:Infinity,media.currentTime+0.05)};
  q('jumpBack').onclick=()=>{media.currentTime=Math.max(0,media.currentTime-5)};
  q('jumpForward').onclick=()=>{media.currentTime=Math.min(Number.isFinite(media.duration)?media.duration:Infinity,media.currentTime+5)};
  media.addEventListener('timeupdate',()=>{if(state.loop&&valid()&&media.currentTime>=state.b-.04)media.currentTime=state.a;draw()});
