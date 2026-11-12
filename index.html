@@ -218,7 +218,7 @@ label{display:block;font-weight:650;font-size:13px;margin:0 0 5px}input,select,t
 </style>
 </head>
 <body>
-<header><h1>Music Course Builder</h1><p>Build a course, organize classes, and plan focused practice — V55.6 · Smart Media Relinking (beta)</p></header>
+<header><h1>Music Course Builder</h1><p>Build a course, organize classes, and plan focused practice — V55.7.3 · YouTube Loop Fix (beta)</p></header>
 <main>
   <div class="card" id="cloudPanel" style="margin-bottom:14px">
     <h2>Private Cloud Course Library <small style="font-weight:normal">V55.6 beta</small></h2>
@@ -1089,10 +1089,17 @@ window.MCBCloudAuthReady=new Promise(resolve=>{window.MCBCloudAuthResolved=resol
 // Independent YouTube companion: Version 37 original player remains untouched.
 function openYoutubeCompanion(){
  const item=typeof selectedItem==='function'?selectedItem():null;
- const raw=(item?.url||'').trim();
- let target='youtube-player.html';
- if(raw){try{const u=new URL(raw);if(['youtube.com','www.youtube.com','m.youtube.com','youtu.be','www.youtu.be'].includes(u.hostname))target+='?video='+encodeURIComponent(raw)}catch(e){}}
- window.open(target,'_blank','noopener');
+ const editor=document.getElementById('itemEditUrl');
+ const editing=document.getElementById('itemModal')&&!document.getElementById('itemModal').hidden;
+ const raw=((editing&&editor?.value)||item?.url||'').trim();
+ const target=new URL('youtube-player.html',document.baseURI);
+ if(raw){
+   try{
+     const u=new URL(raw);
+     if(['youtube.com','www.youtube.com','m.youtube.com','youtu.be','www.youtu.be','www.youtube-nocookie.com'].includes(u.hostname))target.searchParams.set('video',raw);
+   }catch(e){}
+ }
+ window.open(target.href,'_blank','noopener');
 }
 document.getElementById('youtubeCompanionBtn').addEventListener('click',openYoutubeCompanion);
 </script>
