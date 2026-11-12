@@ -685,7 +685,7 @@ function addMediaControls(media,r,host,file){
  const canvas=q('waveCanvas'),ctx=canvas.getContext('2d');
  let wavePeaks=null, waveDrag=null, wavePending=false;
  let zoom=1,viewStart=0;
- let scrubWasPaused=true, scrubStartedPlayback=false;
+ let scrubWasPaused=true, scrubStartedPlayback=false, scrubVideo=false;
  const visibleDuration=()=>waveDuration()/zoom;
  function clampView(){viewStart=Math.max(0,Math.min(viewStart,Math.max(0,waveDuration()-visibleDuration())))}
  function setZoom(next){const d=waveDuration();if(!d)return;const focus=Math.max(viewStart,Math.min(viewStart+visibleDuration(),media.currentTime||0));const ratio=(focus-viewStart)/visibleDuration();zoom=Math.max(1,Math.min(64,next));viewStart=focus-ratio*visibleDuration();clampView();q('waveZoomLabel').textContent=Math.round(zoom*100)+'%';paintWave()}
@@ -733,10 +733,12 @@ function addMediaControls(media,r,host,file){
   waveDrag=!e.shiftKey?'scrub':nearA&&nearB?(Math.abs(t-state.a)<=Math.abs(t-state.b)?'a':'b'):nearA?'a':nearB?'b':'range';
   dragStart=t;dragMoved=false;canvas.setPointerCapture(e.pointerId);
   if(waveDrag==='scrub'){
-   scrubWasPaused=media.paused;scrubStartedPlayback=false;
+   scrubWasPaused=media.paused;scrubStartedPlayback=false;scrubVideo=r.kind==='video';
+   // A video should show the frame being scrubbed, not start playing after release.
+   if(scrubVideo&&!media.paused)media.pause();
    media.currentTime=t;loopNavigationOverride=true;draw();
    // Playback while dragging makes the scrub audible, including when initially paused.
-   if(scrubWasPaused){
+   if(scrubWasPaused&&!scrubVideo){
     const playRequest=media.play();
     if(playRequest&&typeof playRequest.then==='function')playRequest.then(()=>{scrubStartedPlayback=true;if(waveDrag!=='scrub')media.pause()}).catch(()=>{});
     else scrubStartedPlayback=true;
@@ -749,10 +751,9 @@ function addMediaControls(media,r,host,file){
   if(Math.abs(t-dragStart)>Math.max(.05,visibleDuration()*4/canvas.getBoundingClientRect().width))dragMoved=true;
   if(!dragMoved)return;
   if(waveDrag==='scrub'){
-   if(performance.now()-lastAudioScrub>55){media.currentTime=t;loopNavigationOverride=true;lastAudioScrub=performance.now()}
+   if(performance.now()-lastAudioScrub>(scrubVideo?90:55)){media.currentTime=t;loopNavigationOverride=true;lastAudioScrub=performance.now()}
   }else if(waveDrag==='range'){
    state.a=Math.min(dragStart,t);state.b=Math.max(dragStart,t);
-   if(!valid())state.loop=false;
    loopNavigationOverride=false;
   }else if(waveDrag==='a'){
    state.a=Math.min(t,state.b===null?waveDuration():Math.max(0,state.b-.06));
@@ -766,10 +767,13 @@ function addMediaControls(media,r,host,file){
   if(!waveDrag)return;
   if(waveDrag==='scrub'){
    media.currentTime=waveTime(e);loopNavigationOverride=true;
-   if(scrubWasPaused&&scrubStartedPlayback)media.pause();
+   if(scrubVideo){
+    // Do not trigger playback after releasing a paused MP4 scrub.
+    if(!scrubWasPaused)media.play().catch(()=>{});
+   }else if(scrubWasPaused&&scrubStartedPlayback)media.pause();
   }
   if(!dragMoved&&waveDrag==='range')media.currentTime=waveTime(e);loopNavigationOverride=true;
-  if(dragMoved&&waveDrag!=='scrub'){if(!valid())state.loop=false;loopNavigationOverride=false;save()}
+  if(dragMoved&&waveDrag!=='scrub'){loopNavigationOverride=false;save()}
   waveDrag=null;dragStart=null;draw();
  }
  canvas.addEventListener('pointerup',finishWave);
@@ -820,7 +824,7 @@ function addMediaControls(media,r,host,file){
  q('clearLoop').onclick=()=>{state.a=null;state.b=null;state.loop=false;save();draw()};
  const playPause=q('mediaPlayPause');
  function updatePlayPause(){playPause.textContent=media.paused?'▶ Play':'⏸ Pause';playPause.setAttribute('aria-label',media.paused?'Play':'Pause')}
- function togglePlayback(){if(!media.paused){media.pause();return}if(state.loop&&valid()&&!loopNavigationOverride&&(media.currentTime<state.a||media.currentTime>=state.b))media.currentTime=state.a;media.play().catch(err=>console.warn('Playback could not start',err))}
+ function togglePlayback(){if(!media.paused){media.pause();return}loopNavigationOverride=false;if(state.loop&&valid()&&(media.currentTime<state.a||media.currentTime>=state.b))media.currentTime=state.a;media.play().catch(err=>console.warn('Playback could not start',err))}
  playPause.onclick=togglePlayback;
  media.addEventListener('play',updatePlayPause);media.addEventListener('pause',updatePlayPause);media.addEventListener('ended',updatePlayPause);
  activePlaybackToggle=togglePlayback;activePlaybackMedia=media;updatePlayPause();
@@ -832,8 +836,8 @@ function addMediaControls(media,r,host,file){
  q('nudgeRight').onclick=()=>{manualNavigate(media.currentTime+0.05)};
  q('jumpBack').onclick=()=>{manualNavigate(media.currentTime-5)};
  q('jumpForward').onclick=()=>{manualNavigate(media.currentTime+5)};
- media.addEventListener('timeupdate',()=>{if(state.loop&&valid()&&!media.paused){if(loopNavigationOverride&&media.currentTime>=state.a&&media.currentTime<state.b-.1)loopNavigationOverride=false;if(!loopNavigationOverride&&media.currentTime>=state.b-.04)media.currentTime=state.a}draw()});
- media.addEventListener('seeked',draw);media.addEventListener('loadedmetadata',draw);
+ media.addEventListener('timeupdate',()=>{if(state.loop&&valid()&&!media.paused){if(!loopNavigationOverride&&media.currentTime>=state.b-.04)media.currentTime=state.a}draw()});
+ media.addEventListener('seeked',()=>{draw();if(r.kind==='video')paintWave()});media.addEventListener('loadedmetadata',draw);
  media.addEventListener('ended',()=>{if(state.loop&&valid()&&!loopNavigationOverride){media.currentTime=state.a;media.play().catch(()=>{})}});
  draw();
 }
