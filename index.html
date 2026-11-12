@@ -571,7 +571,7 @@ function mediaTime(t){if(!Number.isFinite(t))return '--:--';const m=Math.floor(t
 function addMediaControls(media,r,host,file){
  const panel=document.createElement('div');panel.className='media-tools';
  panel.innerHTML=`
- <div class="wave-wrap"><canvas class="wave-canvas" id="waveCanvas" height="130" aria-label="Audio waveform and loop markers"></canvas><div class="wave-zoom-controls"><button type="button" class="secondary" id="waveZoomOut" title="Zoom out">− Zoom</button><button type="button" class="secondary" id="waveZoomIn" title="Zoom around playhead">+ Zoom</button><button type="button" class="secondary" id="waveZoomFit" title="Show the entire recording">Fit All</button><span id="waveZoomLabel">100%</span></div><div id="waveInfo" class="wave-help" aria-live="polite">Analyzing waveform…</div></div>
+ <div class="wave-wrap"><canvas class="wave-canvas" id="waveCanvas" height="130" aria-label="Audio waveform and loop markers"></canvas><div class="wave-zoom-controls"><button type="button" class="secondary" id="waveZoomOut" title="Zoom out">− Zoom</button><button type="button" class="secondary" id="waveZoomIn" title="Zoom around playhead">+ Zoom</button><button type="button" class="secondary" id="waveZoomFit" title="Show the entire recording">Fit All</button><span id="waveZoomLabel">100%</span></div><div id="waveInfo" class="wave-help" aria-live="polite">Analyzing waveform… Hold Shift and drag to scrub without changing loop markers.</div></div>
  <div class="media-control-scroll" aria-label="Media playback controls"><div class="media-control-strip">
  <button type="button" id="mediaPlayPause">▶ Play</button>
  <button type="button" class="secondary" id="mediaPlayStart">⏮ Start</button>
@@ -679,20 +679,23 @@ function addMediaControls(media,r,host,file){
   wavePending=true;requestAnimationFrame(()=>{wavePending=false;lastVideoPaint=performance.now();paintWave()});
  }
  function waveTime(e){const rect=canvas.getBoundingClientRect();return Math.max(0,Math.min(waveDuration(),viewStart+(e.clientX-rect.left)/rect.width*visibleDuration()))}
- let dragStart=null,dragMoved=false;
+ let dragStart=null,dragMoved=false,lastAudioScrub=0;
  canvas.addEventListener('pointerdown',e=>{
   if(!waveDuration())return;
   const t=waveTime(e),tol=12/canvas.getBoundingClientRect().width*visibleDuration();
   const nearA=state.a!==null&&Math.abs(t-state.a)<tol,nearB=state.b!==null&&Math.abs(t-state.b)<tol;
-  waveDrag=nearA&&nearB?(Math.abs(t-state.a)<=Math.abs(t-state.b)?'a':'b'):nearA?'a':nearB?'b':'range';
+  waveDrag=e.shiftKey?'scrub':nearA&&nearB?(Math.abs(t-state.a)<=Math.abs(t-state.b)?'a':'b'):nearA?'a':nearB?'b':'range';
   dragStart=t;dragMoved=false;canvas.setPointerCapture(e.pointerId);
+  if(waveDrag==='scrub'){media.currentTime=t;draw();}
  });
  canvas.addEventListener('pointermove',e=>{
   if(!waveDrag)return;
   const t=waveTime(e);
   if(Math.abs(t-dragStart)>Math.max(.05,visibleDuration()*4/canvas.getBoundingClientRect().width))dragMoved=true;
   if(!dragMoved)return;
-  if(waveDrag==='range'){
+  if(waveDrag==='scrub'){
+   if(performance.now()-lastAudioScrub>55){media.currentTime=t;lastAudioScrub=performance.now()}
+  }else if(waveDrag==='range'){
    state.a=Math.min(dragStart,t);state.b=Math.max(dragStart,t);
    state.loop=false;
   }else if(waveDrag==='a'){
@@ -704,8 +707,9 @@ function addMediaControls(media,r,host,file){
  });
  function finishWave(e){
   if(!waveDrag)return;
+  if(waveDrag==='scrub')media.currentTime=waveTime(e);
   if(!dragMoved&&waveDrag==='range')media.currentTime=waveTime(e);
-  if(dragMoved){if(!valid())state.loop=false;save()}
+  if(dragMoved&&waveDrag!=='scrub'){if(!valid())state.loop=false;save()}
   waveDrag=null;dragStart=null;draw();
  }
  canvas.addEventListener('pointerup',finishWave);
