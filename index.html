@@ -731,7 +731,7 @@ function addMediaControls(media,r,host,file){
   dragStart=t;dragMoved=false;canvas.setPointerCapture(e.pointerId);
   if(waveDrag==='scrub'){
    scrubWasPaused=media.paused;scrubStartedPlayback=false;
-   media.currentTime=t;draw();
+   media.currentTime=t;loopNavigationOverride=true;draw();
    // Playback while dragging makes the scrub audible, including when initially paused.
    if(scrubWasPaused){
     const playRequest=media.play();
@@ -746,7 +746,7 @@ function addMediaControls(media,r,host,file){
   if(Math.abs(t-dragStart)>Math.max(.05,visibleDuration()*4/canvas.getBoundingClientRect().width))dragMoved=true;
   if(!dragMoved)return;
   if(waveDrag==='scrub'){
-   if(performance.now()-lastAudioScrub>55){media.currentTime=t;lastAudioScrub=performance.now()}
+   if(performance.now()-lastAudioScrub>55){media.currentTime=t;loopNavigationOverride=true;lastAudioScrub=performance.now()}
   }else if(waveDrag==='range'){
    state.a=Math.min(dragStart,t);state.b=Math.max(dragStart,t);
    state.loop=false;
@@ -760,10 +760,10 @@ function addMediaControls(media,r,host,file){
  function finishWave(e){
   if(!waveDrag)return;
   if(waveDrag==='scrub'){
-   media.currentTime=waveTime(e);
+   media.currentTime=waveTime(e);loopNavigationOverride=true;
    if(scrubWasPaused&&scrubStartedPlayback)media.pause();
   }
-  if(!dragMoved&&waveDrag==='range')media.currentTime=waveTime(e);
+  if(!dragMoved&&waveDrag==='range')media.currentTime=waveTime(e);loopNavigationOverride=true;
   if(dragMoved&&waveDrag!=='scrub'){if(!valid())state.loop=false;save()}
   waveDrag=null;dragStart=null;draw();
  }
@@ -809,24 +809,26 @@ function addMediaControls(media,r,host,file){
  analyzeWave();
  media.addEventListener('timeupdate',updateWave);media.addEventListener('playing',updateWave);media.addEventListener('loadedmetadata',updateWave);media.addEventListener('pause',updateWave);media.addEventListener('seeked',updateWave);window.addEventListener('resize',updateWave);
 
- q('toggleLoop').onclick=()=>{if(!valid()){alert('Select a loop by dragging across the waveform, or set In and Out at the playhead.');return}state.loop=!state.loop;if(state.loop&&(media.currentTime<state.a||media.currentTime>=state.b))media.currentTime=state.a;save();draw()};
+ let loopNavigationOverride=false;
+ function manualNavigate(t){loopNavigationOverride=true;media.currentTime=Math.max(0,Math.min(Number.isFinite(media.duration)?media.duration:Infinity,t));draw()}
+ q('toggleLoop').onclick=()=>{if(!valid()){alert('Select a loop by dragging across the waveform, or set In and Out at the playhead.');return}state.loop=!state.loop;loopNavigationOverride=false;if(state.loop&&(media.currentTime<state.a||media.currentTime>=state.b))media.currentTime=state.a;save();draw()};
  q('clearLoop').onclick=()=>{state.a=null;state.b=null;state.loop=false;save();draw()};
  const playPause=q('mediaPlayPause');
  function updatePlayPause(){playPause.textContent=media.paused?'▶ Play':'⏸ Pause';playPause.setAttribute('aria-label',media.paused?'Play':'Pause')}
- function togglePlayback(){if(!media.paused){media.pause();return}if(state.loop&&valid()&&(media.currentTime<state.a||media.currentTime>=state.b))media.currentTime=state.a;media.play().catch(err=>console.warn('Playback could not start',err))}
+ function togglePlayback(){if(!media.paused){media.pause();return}if(state.loop&&valid()&&!loopNavigationOverride&&(media.currentTime<state.a||media.currentTime>=state.b))media.currentTime=state.a;media.play().catch(err=>console.warn('Playback could not start',err))}
  playPause.onclick=togglePlayback;
  media.addEventListener('play',updatePlayPause);media.addEventListener('pause',updatePlayPause);media.addEventListener('ended',updatePlayPause);
  activePlaybackToggle=togglePlayback;activePlaybackMedia=media;updatePlayPause();
  
  
- q('jumpToIn').onclick=()=>{if(state.a!==null)media.currentTime=state.a};
- q('nudgeLeft').onclick=()=>{media.currentTime=Math.max(0,media.currentTime-0.05)};
- q('nudgeRight').onclick=()=>{media.currentTime=Math.min(Number.isFinite(media.duration)?media.duration:Infinity,media.currentTime+0.05)};
- q('jumpBack').onclick=()=>{media.currentTime=Math.max(0,media.currentTime-5)};
- q('jumpForward').onclick=()=>{media.currentTime=Math.min(Number.isFinite(media.duration)?media.duration:Infinity,media.currentTime+5)};
- media.addEventListener('timeupdate',()=>{if(state.loop&&valid()&&media.currentTime>=state.b-.04)media.currentTime=state.a;draw()});
+ q('jumpToIn').onclick=()=>{if(state.a!==null)manualNavigate(state.a)};
+ q('nudgeLeft').onclick=()=>{manualNavigate(media.currentTime-0.05)};
+ q('nudgeRight').onclick=()=>{manualNavigate(media.currentTime+0.05)};
+ q('jumpBack').onclick=()=>{manualNavigate(media.currentTime-5)};
+ q('jumpForward').onclick=()=>{manualNavigate(media.currentTime+5)};
+ media.addEventListener('timeupdate',()=>{if(state.loop&&valid()&&!media.paused){if(loopNavigationOverride&&media.currentTime>=state.a&&media.currentTime<state.b-.1)loopNavigationOverride=false;if(!loopNavigationOverride&&media.currentTime>=state.b-.04)media.currentTime=state.a}draw()});
  media.addEventListener('seeked',draw);media.addEventListener('loadedmetadata',draw);
- media.addEventListener('ended',()=>{if(state.loop&&valid()){media.currentTime=state.a;media.play().catch(()=>{})}});
+ media.addEventListener('ended',()=>{if(state.loop&&valid()&&!loopNavigationOverride){media.currentTime=state.a;media.play().catch(()=>{})}});
  draw();
 }
 
