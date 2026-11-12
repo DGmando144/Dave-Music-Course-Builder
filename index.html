@@ -7,9 +7,9 @@
 <style>
 :root{--ink:#203047;--muted:#66758a;--paper:#f4f6f9;--card:#fff;--line:#dce3eb;--blue:#285b91;--blue2:#e8f1fb;--green:#23734b;--amber:#946200;--red:#a43c3c}
 *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{background:#17283d;color:#fff;padding:22px max(18px,calc((100% - 1120px)/2))}
+header{background:#17283d;color:#fff;padding:22px max(18px,calc((100% - 1400px)/2))}
 header h1{margin:0;font-size:25px}header p{margin:4px 0 0;color:#d3dfeb}
-main{max-width:1120px;margin:22px auto;padding:0 16px 50px}
+main{max-width:1400px;margin:22px auto;padding:0 16px 50px}
 .toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 button,.button{border:0;border-radius:8px;padding:10px 14px;background:var(--blue);color:#fff;font-weight:650;cursor:pointer;font-size:14px}
 button.secondary{background:#e7edf4;color:#23364d}button.green{background:var(--green)}button.danger{background:#f7e9e9;color:var(--red)}button:disabled{opacity:.45;cursor:not-allowed}
@@ -38,8 +38,8 @@ label{display:block;font-weight:650;font-size:13px;margin:0 0 5px}input,select,t
 .wave-actions{padding:4px 0 8px}.wave-actions button{font-size:13px}.wave-canvas{cursor:crosshair}
 .media-transport{margin-top:10px!important;margin-bottom:6px!important}.media-transport #mediaPlayPause{min-width:105px}.media-tools .loop-status:empty{display:none}.media-tools:fullscreen{overflow:auto;background:#fff;padding:20px}.resource-preview:fullscreen{overflow:auto;background:white}
 
-.media-control-scroll{overflow-x:auto;overflow-y:visible;width:100%;padding:7px 2px 13px;scrollbar-width:thin}
-.media-control-strip{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;width:max-content;min-width:100%}
+.media-control-scroll{overflow-x:visible;overflow-y:visible;width:100%;padding:7px 2px 13px;scrollbar-width:thin}
+.media-control-strip{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;min-width:0}
 .media-control-strip>*{flex:none}
 .media-control-strip button{font-size:12px;padding:8px 10px}
 .media-control-strip .speed-picker{margin-left:0}
@@ -216,6 +216,8 @@ label{display:block;font-weight:650;font-size:13px;margin:0 0 5px}input,select,t
 .cloud-save-btn[data-state="error"]{background:#ad3030!important;border-color:#ad3030!important;color:#fff!important}
 .cloud-save-btn[data-state="idle"]{background:#527089!important;border-color:#527089!important;color:#fff!important}
 .media-tools .mcb-play-emphasis{background:#13a85d!important;color:#fff!important;border:2px solid #08783f!important;font-weight:800!important;box-shadow:0 0 0 2px #13a85d33;min-width:88px}.media-tools .mcb-play-emphasis:hover{background:#07864a!important}.media-tools #mediaHelp{font-size:19px!important;font-weight:900!important;min-width:38px}.media-tools .media-control-strip button:hover{filter:brightness(1.08)}
+/* V55.7.19: responsive multirow transport and wider waveform */
+@media(max-width:680px){.media-control-strip{display:flex!important;flex-wrap:wrap!important;width:100%!important;min-width:0!important;gap:5px!important}.media-control-scroll{overflow-x:visible!important;overflow-y:visible!important;height:auto!important;max-height:none!important}.media-control-strip button{white-space:nowrap;padding:8px 9px}}
 </style>
 </head>
 <body>
@@ -611,6 +613,7 @@ function addMediaControls(media,r,host,file){
  <div class="wave-wrap"><canvas class="wave-canvas" id="waveCanvas" height="130" aria-label="Audio waveform and loop markers"></canvas><div class="wave-zoom-controls"><button type="button" class="secondary" id="waveZoomOut" title="Zoom out">− Zoom</button><button type="button" class="secondary" id="waveZoomIn" title="Zoom around playhead">+ Zoom</button><button type="button" class="secondary" id="waveZoomFit" title="Show the entire recording">Fit All</button><span id="waveZoomLabel">100%</span></div><div id="waveInfo" class="wave-help" aria-live="polite">Analyzing waveform… Drag to scrub; hold Shift and drag to select or adjust loop markers.</div></div>
  <div class="media-control-scroll" aria-label="Media playback controls"><div class="media-control-strip">
  <button type="button" class="secondary" id="jumpToIn">Jump to In</button>
+ <button type="button" class="secondary" id="jumpToOut">Jump to Out</button>
  <button type="button" class="secondary" id="toggleLoop">Enable Loop</button>
  <button type="button" class="mcb-play-emphasis" id="mediaPlayPause">▶ Play</button>
  <button type="button" class="secondary" id="waveStart">Mark In</button>
@@ -630,12 +633,12 @@ function addMediaControls(media,r,host,file){
  <p><b>Play/Pause:</b> Click Play/Pause or press the spacebar when not typing. </p>
  <p><b>Zoom:</b> Use + Zoom to zoom around the playhead, − Zoom to zoom out, Fit All for the complete recording, and the mouse wheel to scroll horizontally while zoomed. Some video codecs cannot be analyzed directly in Chrome.</p>
  <p><b>Waveform:</b> Click to seek. Drag across the waveform to scrub. Hold Shift and drag to select a loop, or Shift-drag the blue In or orange Out marker to fine-tune the selection. Alternatively, seek and click Mark In or Mark Out to place a marker at the playhead.</p>
- <p><b>Enable Loop:</b> Repeat the selected passage. Clear Markers removes the selection. Jump to In returns to the IN marker. Nudge Left/Right move only the playhead by 0.05 seconds without changing markers. The −5s and +5s buttons seek five seconds. Click ? to show or hide these instructions. The Speed dropdown changes playback rate; the browser preserves original pitch where supported.</p>
+ <p><b>Enable Loop:</b> Repeat the selected passage. Clear Markers removes the selection. Jump to In/Out seek to their respective markers. Nudge Left/Right move only the playhead by 0.05 seconds without changing markers. The −5s and +5s buttons seek five seconds. Click ? to show or hide these instructions. The Speed dropdown changes playback rate; the browser preserves original pitch where supported.</p>
  <p><b>Floating and sizing:</b> Use Float Player, then drag its title bar to reposition it. Drag the outer bottom-right corner to resize the player. Drag the labeled horizontal divider between video and waveform to make the video larger or smaller, when the player is floating. You can also focus the divider and press the up/down arrow keys. For video, Float Player opens a separate always-on-top Chrome window that can move between monitors; browser-enforced size limits still apply.</p>
  <p>The timecode next to Help shows elapsed time / total duration. In floating video, Full Screen is hidden; use Dock Player to return to the normal view before using Full Screen. Speed and loop markers are saved with the resource. Audio floats with compact controls for PDF practice. Video floats in a separate movable, resizable window. V45 restores the original V37 waveform decoder for supported files in Normal Size. Float hides the waveform to keep video practice responsive. Zoom with +/−, Fit All, or scroll the zoomed waveform.</p>
  </div>`;
  host.appendChild(panel);
- const compactLabels={mediaPlayPause:'Play or pause',speedButton:'Playback speed',waveStart:'Mark In',waveEnd:'Mark Out',toggleLoop:'Toggle loop',jumpToIn:'Jump to In marker',nudgeLeft:'Nudge playback backward 0.05 seconds',nudgeRight:'Nudge playback forward 0.05 seconds',clearLoop:'Clear markers',jumpBack:'Back 5 seconds',jumpForward:'Forward 5 seconds',mediaHelp:'Click for help'};
+ const compactLabels={mediaPlayPause:'Play or pause',speedButton:'Playback speed',waveStart:'Mark In',waveEnd:'Mark Out',toggleLoop:'Toggle loop',jumpToIn:'Jump to In marker',jumpToOut:'Jump to Out marker',nudgeLeft:'Nudge playback backward 0.05 seconds',nudgeRight:'Nudge playback forward 0.05 seconds',clearLoop:'Clear markers',jumpBack:'Back 5 seconds',jumpForward:'Forward 5 seconds',mediaHelp:'Click for help'};
  for(const [id,label] of Object.entries(compactLabels)){const button=panel.querySelector('#'+id);if(button){button.title=label;button.setAttribute('aria-label',label)}}
  const helpBtn=panel.querySelector('#mediaHelp'),helpText=panel.querySelector('#mediaHelpText');
  function showHelp(){helpText.hidden=false;helpBtn.setAttribute('aria-expanded','true')}
@@ -749,12 +752,14 @@ function addMediaControls(media,r,host,file){
    if(performance.now()-lastAudioScrub>55){media.currentTime=t;loopNavigationOverride=true;lastAudioScrub=performance.now()}
   }else if(waveDrag==='range'){
    state.a=Math.min(dragStart,t);state.b=Math.max(dragStart,t);
-   state.loop=false;
+   if(!valid())state.loop=false;
+   loopNavigationOverride=false;
   }else if(waveDrag==='a'){
    state.a=Math.min(t,state.b===null?waveDuration():Math.max(0,state.b-.06));
   }else{
    state.b=Math.max(t,state.a===null?0:state.a+.06);
   }
+  if(waveDrag!=='scrub')loopNavigationOverride=false;
   draw();
  });
  function finishWave(e){
@@ -764,13 +769,13 @@ function addMediaControls(media,r,host,file){
    if(scrubWasPaused&&scrubStartedPlayback)media.pause();
   }
   if(!dragMoved&&waveDrag==='range')media.currentTime=waveTime(e);loopNavigationOverride=true;
-  if(dragMoved&&waveDrag!=='scrub'){if(!valid())state.loop=false;save()}
+  if(dragMoved&&waveDrag!=='scrub'){if(!valid())state.loop=false;loopNavigationOverride=false;save()}
   waveDrag=null;dragStart=null;draw();
  }
  canvas.addEventListener('pointerup',finishWave);
  canvas.addEventListener('pointercancel',()=>{if(waveDrag==='scrub'&&scrubWasPaused&&scrubStartedPlayback)media.pause();waveDrag=null;dragStart=null;draw()});
- q('waveStart').onclick=()=>{state.a=media.currentTime;if(state.b!==null&&state.b<=state.a){state.b=null;state.loop=false}save();draw()};
- q('waveEnd').onclick=()=>{state.b=media.currentTime;if(state.a!==null&&state.b<=state.a)state.loop=false;save();draw()};
+ q('waveStart').onclick=()=>{loopNavigationOverride=false;state.a=media.currentTime;if(state.b!==null&&state.b<=state.a){state.b=null;state.loop=false}save();draw()};
+ q('waveEnd').onclick=()=>{loopNavigationOverride=false;state.b=media.currentTime;if(state.a!==null&&state.b<=state.a)state.loop=false;save();draw()};
  // V45: Restore the original V37/V39 full-file decoding path for videos.
  // Decode only on opening the file, not when floating, docking or resizing.
  // No FFmpeg download or companion audio file is required.
@@ -822,6 +827,7 @@ function addMediaControls(media,r,host,file){
  
  
  q('jumpToIn').onclick=()=>{if(state.a!==null)manualNavigate(state.a)};
+ q('jumpToOut').onclick=()=>{if(state.b!==null)manualNavigate(state.b)};
  q('nudgeLeft').onclick=()=>{manualNavigate(media.currentTime-0.05)};
  q('nudgeRight').onclick=()=>{manualNavigate(media.currentTime+0.05)};
  q('jumpBack').onclick=()=>{manualNavigate(media.currentTime-5)};
