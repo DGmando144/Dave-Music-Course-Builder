@@ -686,28 +686,51 @@ function addMediaControls(media,r,host,file){
  let wavePeaks=null, waveDrag=null, wavePending=false;
  let zoom=1,viewStart=0;
  let scrubWasPaused=true, scrubStartedPlayback=false, scrubVideo=false;
- // MP4 decoders need time to finish each seek before rendering the next frame.
- // Keep only the newest requested position while a seek is in progress.
- let videoScrubPending=null,videoScrubSeeking=false,videoScrubLast=0,videoScrubTimer=null;
- function flushVideoScrub(){
-  if(videoScrubPending===null||!scrubVideo)return;
-  if(media.seeking||videoScrubSeeking)return;
+ // Decode-backed grain previews provide audible MP4 scrubbing independently of slow video seeks.
+ let scrubAudioBuffer=null, scrubAudioContext=null, scrubAudioSource=null, scrubAudioLast=0;
+ let scrubAudioWasMuted=false;
+ function stopScrubGrain(){if(scrubAudioSource){try{scrubAudioSource.stop()}catch(e){}scrubAudioSource=null}}
+ function previewScrubAudio(t,force=false){
+  if(!scrubAudioBuffer||!scrubAudioContext)return false;
+  const now=performance.now();if(!force&&now-scrubAudioLast<65)return true;
+  scrubAudioLast=now;
+  try{
+   if(scrubAudioContext.state==='suspended')scrubAudioContext.resume().catch(()=>{});
+   stopScrubGrain();
+   const source=scrubAudioContext.createBufferSource(),gain=scrubAudioContext.createGain();
+   source.buffer=scrubAudioBuffer;
+   // A short grain with a tapered envelope prevents clicks and preserves pitch.
+   const dur=Math.min(.105,Math.max(.015,scrubAudioBuffer.duration-t));
+   if(dur<=.015)return true;
+   const start=scrubAudioContext.currentTime+.005;
+   gain.gain.setValueAtTime(0,start);
+   gain.gain.linearRampToValueAtTime(.85,start+.008);
+   gain.gain.setValueAtTime(.85,start+Math.max(.009,dur-.018));
+   gain.gain.linearRampToValueAtTime(0,start+dur);
+   source.connect(gain);gain.connect(scrubAudioContext.destination);
+   source.start(start,Math.max(0,Math.min(t,scrubAudioBuffer.duration-.016)),dur);
+   source.stop(start+dur+.005);scrubAudioSource=source;
+  }catch(err){console.warn('Audio scrub preview failed',err)}
+  return true;
+ }
+ function finishScrubAudio(){stopScrubGrain();if(scrubVideo&&scrubAudioBuffer)media.muted=scrubAudioWasMuted}
+
+ // Preview seeks are coalesced to the latest cursor position. Keep video playing
+ // during drag so its audio is audible and frames can advance between seeks.
+ let videoScrubPending=null,videoScrubLast=0,videoScrubTimer=null;
+ function flushVideoScrub(force=false){
+  if(videoScrubPending===null)return;
   const elapsed=performance.now()-videoScrubLast;
-  if(elapsed<100){
-   if(videoScrubTimer===null)videoScrubTimer=setTimeout(()=>{videoScrubTimer=null;flushVideoScrub()},100-elapsed);
+  if(!force&&elapsed<85){
+   if(videoScrubTimer===null)videoScrubTimer=setTimeout(()=>{videoScrubTimer=null;flushVideoScrub()},85-elapsed);
    return;
   }
-  const t=videoScrubPending;videoScrubPending=null;
-  videoScrubSeeking=true;videoScrubLast=performance.now();
-  try{media.currentTime=t}catch(err){videoScrubSeeking=false;console.warn('Video seek failed',err)}
+  const t=videoScrubPending;videoScrubPending=null;videoScrubLast=performance.now();
+  try{media.currentTime=t}catch(err){console.warn('Video seek failed',err)}
  }
- function requestVideoScrub(t){videoScrubPending=t;loopNavigationOverride=true;flushVideoScrub()}
- media.addEventListener('seeked',()=>{
-  if(!videoScrubSeeking)return;
-  videoScrubSeeking=false;
-  // Allow the decoder to present the completed frame before another seek.
-  if(videoScrubPending!==null)requestAnimationFrame(flushVideoScrub);
- });
+ function requestVideoScrub(t,force=false){
+  videoScrubPending=t;loopNavigationOverride=true;flushVideoScrub(force);
+ }
  const visibleDuration=()=>waveDuration()/zoom;
  function clampView(){viewStart=Math.max(0,Math.min(viewStart,Math.max(0,waveDuration()-visibleDuration())))}
  function setZoom(next){const d=waveDuration();if(!d)return;const focus=Math.max(viewStart,Math.min(viewStart+visibleDuration(),media.currentTime||0));const ratio=(focus-viewStart)/visibleDuration();zoom=Math.max(1,Math.min(64,next));viewStart=focus-ratio*visibleDuration();clampView();q('waveZoomLabel').textContent=Math.round(zoom*100)+'%';paintWave()}
@@ -756,12 +779,13 @@ function addMediaControls(media,r,host,file){
   dragStart=t;dragMoved=false;canvas.setPointerCapture(e.pointerId);
   if(waveDrag==='scrub'){
    scrubWasPaused=media.paused;scrubStartedPlayback=false;scrubVideo=r.kind==='video';
-   // A video should show the frame being scrubbed, not start playing after release.
-   if(scrubVideo&&!media.paused)media.pause();
-   if(scrubVideo)requestVideoScrub(t);else {media.currentTime=t;loopNavigationOverride=true}
+   if(scrubVideo){
+    requestVideoScrub(t,true);
+    if(scrubAudioBuffer){scrubAudioWasMuted=media.muted;media.muted=true;previewScrubAudio(t,true)}
+   }else {media.currentTime=t;loopNavigationOverride=true}
    draw();
-   // Playback while dragging makes the scrub audible, including when initially paused.
-   if(scrubWasPaused&&!scrubVideo){
+   // Temporarily play during scrubbing for audible feedback, restoring pause on release.
+   if(scrubWasPaused){
     const playRequest=media.play();
     if(playRequest&&typeof playRequest.then==='function')playRequest.then(()=>{scrubStartedPlayback=true;if(waveDrag!=='scrub')media.pause()}).catch(()=>{});
     else scrubStartedPlayback=true;
@@ -774,7 +798,7 @@ function addMediaControls(media,r,host,file){
   if(Math.abs(t-dragStart)>Math.max(.05,visibleDuration()*4/canvas.getBoundingClientRect().width))dragMoved=true;
   if(!dragMoved)return;
   if(waveDrag==='scrub'){
-   if(scrubVideo){requestVideoScrub(t)}else if(performance.now()-lastAudioScrub>55){media.currentTime=t;loopNavigationOverride=true;lastAudioScrub=performance.now()}
+   if(scrubVideo){requestVideoScrub(t);previewScrubAudio(t)}else if(performance.now()-lastAudioScrub>55){media.currentTime=t;loopNavigationOverride=true;lastAudioScrub=performance.now()}
   }else if(waveDrag==='range'){
    state.a=Math.min(dragStart,t);state.b=Math.max(dragStart,t);
    loopNavigationOverride=false;
@@ -789,22 +813,16 @@ function addMediaControls(media,r,host,file){
  function finishWave(e){
   if(!waveDrag)return;
   if(waveDrag==='scrub'){
-   if(scrubVideo)requestVideoScrub(waveTime(e));else {media.currentTime=waveTime(e);loopNavigationOverride=true}
-   if(scrubVideo){
-    // Do not trigger playback after releasing a paused MP4 scrub.
-    if(!scrubWasPaused){
-     const resume=()=>media.play().catch(()=>{});
-     if(media.seeking||videoScrubSeeking||videoScrubPending!==null)media.addEventListener('seeked',resume,{once:true});
-     else resume();
-    }
-   }else if(scrubWasPaused&&scrubStartedPlayback)media.pause();
+   if(scrubVideo)requestVideoScrub(waveTime(e),true);else {media.currentTime=waveTime(e);loopNavigationOverride=true}
+   if(scrubWasPaused&&scrubStartedPlayback)media.pause();
+   finishScrubAudio();
   }
   if(!dragMoved&&waveDrag==='range')media.currentTime=waveTime(e);loopNavigationOverride=true;
   if(dragMoved&&waveDrag!=='scrub'){loopNavigationOverride=false;save()}
   waveDrag=null;dragStart=null;draw();
  }
  canvas.addEventListener('pointerup',finishWave);
- canvas.addEventListener('pointercancel',()=>{if(videoScrubTimer!==null){clearTimeout(videoScrubTimer);videoScrubTimer=null}videoScrubPending=null;if(waveDrag==='scrub'&&scrubWasPaused&&scrubStartedPlayback)media.pause();waveDrag=null;dragStart=null;draw()});
+ canvas.addEventListener('pointercancel',()=>{if(videoScrubTimer!==null){clearTimeout(videoScrubTimer);videoScrubTimer=null}videoScrubPending=null;if(waveDrag==='scrub'&&scrubWasPaused&&scrubStartedPlayback)media.pause();finishScrubAudio();waveDrag=null;dragStart=null;draw()});
  q('waveStart').onclick=()=>{loopNavigationOverride=false;state.a=media.currentTime;if(state.b!==null&&state.b<=state.a){state.b=null;state.loop=false}save();draw()};
  q('waveEnd').onclick=()=>{loopNavigationOverride=false;state.b=media.currentTime;if(state.a!==null&&state.b<=state.a)state.loop=false;save();draw()};
  // V45: Restore the original V37/V39 full-file decoding path for videos.
@@ -831,8 +849,13 @@ function addMediaControls(media,r,host,file){
     peaks[k]=peak;
    }
    if(activeMediaURL!==analysisToken)return;
+   if(r.kind==='video'){
+    scrubAudioBuffer=decoded;
+    // Keep the audio context alive for low-latency preview grains.
+    scrubAudioContext=ac;ac=null;
+   }
    wavePeaks=peaks;
-   info.textContent='Complete waveform ready · zoom and drag to set In/Out';
+   info.textContent=r.kind==='video'?'Waveform ready · drag to hear audio and scrub video':'Complete waveform ready · zoom and drag to set In/Out';
    updateWave();
   }catch(err){
    if(activeMediaURL!==analysisToken)return;
