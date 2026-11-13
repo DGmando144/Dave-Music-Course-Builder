@@ -346,6 +346,31 @@ label{display:block;font-weight:650;font-size:13px;margin:0 0 5px}input,select,t
  .media-tools{padding:6px!important}
  .media-tools .media-control-scroll{padding:3px 0 5px!important}
 }
+
+/* V55.7.29 — floating AUDIO ONLY: compact controls regardless of desktop viewport.
+   Must be outside @media rules: floating window is narrow even on wide monitors. */
+.floating-player.mini-media-player .media-tools{padding:4px 6px!important}
+.floating-player.mini-media-player .media-tools .media-control-scroll{overflow:visible!important;max-width:100%!important}
+.floating-player.mini-media-player .media-tools .media-control-strip{display:flex!important;flex-wrap:wrap!important;justify-content:flex-start!important;gap:3px 4px!important;align-items:flex-start!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit{width:38px!important;min-width:38px!important;max-width:38px!important;gap:1px!important;flex:0 0 38px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit>button,
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit>.help-popover-anchor>button{
+ width:32px!important;min-width:32px!important;max-width:32px!important;height:30px!important;min-height:30px!important;max-height:30px!important;padding:2px!important;border-radius:6px!important
+}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit>button::before,
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit>.help-popover-anchor>button::before{
+ width:23px!important;height:22px!important;flex:0 0 23px!important;background-size:contain!important
+}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-label{font-size:8px!important;line-height:1.05!important;max-width:38px!important;min-height:17px!important;overflow-wrap:normal!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit .help-popover-anchor{height:30px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-speed-unit{width:66px!important;min-width:66px!important;max-width:66px!important;flex:0 0 66px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-speed-unit .speed-picker{height:30px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-speed-unit #speedButton{
+ width:64px!important;min-width:64px!important;max-width:64px!important;height:30px!important;min-height:30px!important;max-height:30px!important;padding:1px!important
+}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-speed-unit #speedButton::before{font-size:9px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-speed-unit #speedButton::after{font-size:12px!important}
+
 </style>
 </head>
 <body>
