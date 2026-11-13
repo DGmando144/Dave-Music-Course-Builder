@@ -310,6 +310,42 @@ label{display:block;font-weight:650;font-size:13px;margin:0 0 5px}input,select,t
 .floating-player.mini-media-player .media-topbar .media-fullscreen-btn,
 .floating-player.mini-media-player .media-topbar .mcb-float-audio-close{display:none!important}
 
+
+/* V55.7.28: desktop docked audio gets more waveform, no unused native-control band. */
+@media (min-width: 701px){
+ .resource-preview:not(.floating-player):not(.player-expanded):has(> .media-video-region.audio-region) > .media-video-region.audio-region,
+ .resource-preview:not(.floating-player):not(.player-expanded):has(> .media-video-region.audio-region) > .media-splitter{display:none!important}
+ .resource-preview:not(.floating-player):not(.player-expanded):has(> .media-video-region.audio-region) > .media-tools{margin-top:5px!important;padding-top:8px!important}
+ .resource-preview:not(.floating-player):not(.player-expanded):has(> .media-video-region.audio-region) .wave-wrap{margin-top:4px!important}
+ .resource-preview:not(.floating-player):not(.player-expanded):has(> .media-video-region.audio-region) .wave-canvas{height:195px!important}
+}
+/* V55.7.28: phone-sized icons comparable to the former compact text buttons. */
+@media (max-width:700px){
+ .media-tools .media-control-strip{gap:3px!important;justify-content:flex-start!important}
+ .media-tools .mcb-control-unit,.mini-media-player .media-tools .mcb-control-unit{min-width:0!important;gap:2px!important}
+ .media-tools .mcb-control-unit>button,.media-tools .mcb-control-unit>.help-popover-anchor>button,
+ .mini-media-player .media-tools .media-control-strip .mcb-control-unit>button,
+ .floating-player.mini-media-player .media-tools .mcb-control-unit>button,
+ .floating-player.mini-media-player .media-tools .mcb-control-unit>.help-popover-anchor>button{
+  width:clamp(26px,7.4vw,32px)!important;min-width:clamp(26px,7.4vw,32px)!important;max-width:clamp(26px,7.4vw,32px)!important;height:clamp(29px,8vw,35px)!important;border-radius:6px!important;border-width:1px!important
+ }
+ .media-tools .mcb-control-unit>button::before,.media-tools .mcb-control-unit>.help-popover-anchor>button::before,
+ .floating-player.mini-media-player .media-tools .mcb-control-unit>button::before,
+ .floating-player.mini-media-player .media-tools .mcb-control-unit>.help-popover-anchor>button::before{
+  width:clamp(19px,5.7vw,25px)!important;height:clamp(19px,5.7vw,25px)!important;flex:0 0 clamp(19px,5.7vw,25px)!important
+ }
+ .media-tools .mcb-control-label,.floating-player.mini-media-player .media-tools .mcb-control-label{font-size:8px!important;line-height:1.1!important;max-width:39px!important;min-height:18px!important;white-space:normal!important}
+ .media-tools .mcb-control-unit .help-popover-anchor,.floating-player.mini-media-player .media-tools .mcb-control-unit .help-popover-anchor{height:clamp(29px,8vw,35px)!important}
+ .media-tools .mcb-speed-unit,.floating-player.mini-media-player .media-tools .mcb-speed-unit{min-width:56px!important}
+ .media-tools .mcb-speed-unit .speed-picker,.mini-media-player .media-tools .media-control-strip .mcb-speed-unit .speed-picker,.floating-player.mini-media-player .media-tools .mcb-speed-unit .speed-picker{height:clamp(29px,8vw,35px)!important}
+ .media-tools .mcb-speed-unit #speedButton,.mini-media-player .media-tools .media-control-strip .mcb-speed-unit #speedButton,.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton{
+  width:56px!important;min-width:56px!important;max-width:56px!important;height:clamp(29px,8vw,35px)!important;min-height:clamp(29px,8vw,35px)!important;border-radius:6px!important;padding:1px!important
+ }
+ .media-tools .mcb-speed-unit #speedButton::before,.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton::before{font-size:10px!important}
+ .media-tools .mcb-speed-unit #speedButton::after,.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton::after{font-size:13px!important}
+ .media-tools{padding:6px!important}
+ .media-tools .media-control-scroll{padding:3px 0 5px!important}
+}
 </style>
 </head>
 <body>
