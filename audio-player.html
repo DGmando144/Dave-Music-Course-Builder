@@ -1,0 +1,79 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MCB Audio Player</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:14px system-ui,Arial;background:#f2f6fb;color:#173451;padding:14px}h2{font-size:17px;margin:0 0 12px;overflow-wrap:anywhere}
+.panel{background:white;border:1px solid #d3e0ec;border-radius:12px;padding:12px;margin-bottom:12px}
+canvas{width:100%;height:180px;display:block;background:#eaf3fc;border-radius:8px;touch-action:none;cursor:crosshair}
+#times{display:flex;justify-content:space-between;margin-top:6px;font-variant-numeric:tabular-nums}
+.toolbar{display:flex;flex-wrap:wrap;justify-content:center;gap:7px}
+.control{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:52px;font-size:10px;text-align:center}
+button{height:45px;min-width:47px;border:1px solid #759ac2;border-radius:9px;background:linear-gradient(#f1faff,#a6cdf1);box-shadow:0 2px 2px #9fb6c8;color:#173c68;font-size:21px;font-weight:800;cursor:pointer}
+button:disabled{opacity:.45}button.active{background:#214e9c;color:white}#play{background:#08a55b;color:white;font-size:26px}#clear{background:#183b6b;color:#add6ff}select{height:45px;border:1px solid #759ac2;border-radius:9px;background:#c6e3fa;color:#173c68;font-weight:800;padding:0 6px}
+#help{font-size:12px;line-height:1.5}#help[hidden]{display:none}
+@media(max-width:440px){body{padding:7px}.panel{padding:7px}canvas{height:130px}.toolbar{gap:4px}.control{min-width:38px;font-size:9px}button{height:33px;min-width:34px;font-size:16px}#play{font-size:19px}select{height:33px;max-width:62px;font-size:11px}}
+</style></head><body>
+<h2 id="title">Audio Player</h2>
+<div class="panel"><canvas id="wave" aria-label="Waveform; click to seek, drag to select loop"></canvas>
+<div id="times"><span id="current">0:00</span><span id="region">No loop markers</span><span id="duration">0:00</span></div>
+<div style="display:flex;gap:10px;align-items:center;margin-top:8px"><label for="zoom">Zoom</label><input id="zoom" type="range" min="1" max="8" step="1" value="1" style="flex:1"><label for="volume">Volume</label><input id="volume" type="range" min="0" max="1" step=".05" value="1" style="width:80px"></div></div>
+<div class="panel toolbar">
+<div class="control"><button id="jumpIn" title="Jump to In">⏮</button>Jump In</div>
+<div class="control"><button id="jumpOut" title="Jump to Out">⏭</button>Jump Out</div>
+<div class="control"><button id="loop" title="Toggle loop">↻</button>Loop</div>
+<div class="control"><button id="play" title="Play/Pause">▶</button>Play</div>
+<div class="control"><button id="markIn">[</button>Mark In</div>
+<div class="control"><button id="markOut">]</button>Mark Out</div>
+<div class="control"><select id="speed" aria-label="Playback speed"><option value=".5">0.5×</option><option value=".75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>Speed</div>
+<div class="control"><button id="nudgeMinus">‹</button>Nudge −</div>
+<div class="control"><button id="nudgePlus">›</button>Nudge +</div>
+<div class="control"><button id="back5">−5</button>−5 sec</div>
+<div class="control"><button id="forward5">+5</button>+5 sec</div>
+<div class="control"><button id="clear">[ ]</button>Clear Markers</div>
+<div class="control"><button id="helpBtn">?</button>Help</div>
+</div>
+<div class="panel" id="help" hidden>Click the waveform to seek. Drag across it to set In and Out markers. Loop repeats the selected region when playback reaches its end. Nudge adjusts the nearest marker by 0.1 seconds. Zoom magnifies the waveform around the current play position. Browser playback speed preserves pitch where supported.</div>
+<audio id="audio" preload="metadata"></audio>
+<script>
+const $=id=>document.getElementById(id),a=$('audio'),cv=$('wave'),ctx=cv.getContext('2d');
+let samples=null,inPt=null,outPt=null,loop=false,drag=null,objectURL=null,zoom=1,windowStart=0,raf=0;
+const clamp=(n,l,h)=>Math.max(l,Math.min(h,n)),duration=()=>Number.isFinite(a.duration)?a.duration:0;
+const fmt=n=>{n=Math.max(0,Math.floor(n||0));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')};
+function bounds(){let d=duration(),span=d/zoom;windowStart=clamp(windowStart,0,Math.max(0,d-span));return [windowStart,windowStart+span]}
+function xpos(t,w){let [st,en]=bounds();return (t-st)/(en-st||1)*w}
+function atx(x,w){let [st,en]=bounds();return clamp(st+x/w*(en-st),0,duration())}
+function draw(){let w=cv.clientWidth||500,h=cv.clientHeight||180,scale=devicePixelRatio||1;if(cv.width!==Math.round(w*scale)||cv.height!==Math.round(h*scale)){cv.width=Math.round(w*scale);cv.height=Math.round(h*scale)}ctx.setTransform(scale,0,0,scale,0,0);ctx.clearRect(0,0,w,h);
+ctx.fillStyle='#eaf3fc';ctx.fillRect(0,0,w,h);
+if(inPt!==null&&outPt!==null){ctx.fillStyle='#b4e1c8';let x=xpos(inPt,w),y=xpos(outPt,w);ctx.fillRect(x,0,y-x,h)}
+ctx.strokeStyle='#346da7';ctx.lineWidth=1.1;ctx.beginPath();const [st,en]=bounds();
+if(samples){let N=samples.length;for(let x=0;x<w;x++){let t=st+x/w*(en-st),idx=Math.min(N-1,Math.floor(t/(duration()||1)*N)),amp=samples[idx]||0;ctx.moveTo(x,h/2-amp*h*.47);ctx.lineTo(x,h/2+amp*h*.47)}}else{ctx.moveTo(0,h/2);ctx.lineTo(w,h/2)}
+ctx.stroke();
+for(const [t,c] of [[inPt,'#078346'],[outPt,'#b05d08'],[a.currentTime,'#d12536']])if(t!==null){let x=xpos(t,w);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+$('current').textContent=fmt(a.currentTime);$('duration').textContent=fmt(duration());$('region').textContent=inPt!==null&&outPt!==null?fmt(inPt)+' – '+fmt(outPt):'No loop markers';
+$('play').textContent=a.paused?'▶':'Ⅱ';$('loop').classList.toggle('active',loop);
+}
+function tick(){if(loop&&inPt!==null&&outPt!==null&&outPt>inPt&&a.currentTime>=outPt){a.currentTime=inPt;if(a.paused)a.play().catch(()=>{})}draw();raf=requestAnimationFrame(tick)}
+raf=requestAnimationFrame(tick);
+async function load(file,name){if(objectURL)URL.revokeObjectURL(objectURL);objectURL=URL.createObjectURL(file);a.pause();a.src=objectURL;a.load();$('title').textContent=name||file.name||'Audio';samples=null;inPt=outPt=null;zoom=1;windowStart=0;$('zoom').value=1;draw();
+try{const buf=await file.arrayBuffer();const ac=new (window.AudioContext||window.webkitAudioContext)();const decoded=await ac.decodeAudioData(buf);const ch=decoded.getChannelData(0),n=1800;const peaks=new Float32Array(n);for(let i=0;i<n;i++){let st=Math.floor(i*ch.length/n),en=Math.max(st+1,Math.floor((i+1)*ch.length/n)),peak=0;for(let j=st;j<en;j+=Math.max(1,Math.floor((en-st)/100)))peak=Math.max(peak,Math.abs(ch[j]));peaks[i]=peak}samples=peaks;await ac.close();draw()}catch(e){console.warn('Waveform unavailable; audio can still play',e)}}
+window.addEventListener('message',e=>{if(e.data?.type==='MCB_AUDIO_OPEN'&&e.data.file instanceof Blob)load(e.data.file,e.data.name)});
+$('play').onclick=()=>a.paused?a.play().catch(e=>alert('Playback failed: '+e.message)):a.pause();
+$('loop').onclick=()=>{loop=!loop;draw()};
+$('markIn').onclick=()=>{inPt=a.currentTime;if(outPt!==null&&outPt<=inPt)outPt=null;draw()};
+$('markOut').onclick=()=>{outPt=a.currentTime;if(inPt!==null&&inPt>=outPt)inPt=null;draw()};
+$('clear').onclick=()=>{inPt=outPt=null;draw()};
+$('jumpIn').onclick=()=>{if(inPt!==null)a.currentTime=inPt};
+$('jumpOut').onclick=()=>{if(outPt!==null)a.currentTime=outPt};
+$('back5').onclick=()=>a.currentTime=clamp(a.currentTime-5,0,duration());
+$('forward5').onclick=()=>a.currentTime=clamp(a.currentTime+5,0,duration());
+$('nudgeMinus').onclick=()=>{if(inPt!==null)inPt=clamp(inPt-.1,0,outPt===null?duration():outPt-.01);draw()};
+$('nudgePlus').onclick=()=>{if(outPt!==null)outPt=clamp(outPt+.1,inPt===null?0:inPt+.01,duration());draw()};
+$('speed').onchange=()=>a.playbackRate=Number($('speed').value);
+a.preservesPitch=true;a.mozPreservesPitch=true;a.webkitPreservesPitch=true;
+$('volume').oninput=()=>a.volume=Number($('volume').value);
+$('zoom').oninput=()=>{zoom=Number($('zoom').value);windowStart=clamp(a.currentTime-duration()/zoom/2,0,Math.max(0,duration()-duration()/zoom));draw()};
+$('helpBtn').onclick=()=>$('help').hidden=!$('help').hidden;
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);drag={x:e.offsetX,t:atx(e.offsetX,cv.clientWidth)}});
+cv.addEventListener('pointerup',e=>{if(!drag)return;let t=atx(e.offsetX,cv.clientWidth);if(Math.abs(e.offsetX-drag.x)>8){inPt=Math.min(drag.t,t);outPt=Math.max(drag.t,t)}else a.currentTime=t;drag=null;draw()});
+cv.addEventListener('pointercancel',()=>drag=null);
+a.addEventListener('ended',()=>{if(loop&&inPt!==null&&outPt!==null){a.currentTime=inPt;a.play().catch(()=>{})}});
+window.addEventListener('beforeunload',()=>{cancelAnimationFrame(raf);a.pause();if(objectURL)URL.revokeObjectURL(objectURL)});
+</script></body></html>
