@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Music Course Builder — v41</title>
+<style>
+:root{--ink:#203047;--muted:#66758a;--paper:#f4f6f9;--card:#fff;--line:#dce3eb;--blue:#285b91;--blue2:#e8f1fb;--green:#23734b;--amber:#946200;--red:#a43c3c}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:#17283d;color:#fff;padding:22px max(18px,calc((100% - 1400px)/2))}
+header h1{margin:0;font-size:25px}header p{margin:4px 0 0;color:#d3dfeb}
+main{max-width:1400px;margin:22px auto;padding:0 16px 50px}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+button,.button{border:0;border-radius:8px;padding:10px 14px;background:var(--blue);color:#fff;font-weight:650;cursor:pointer;font-size:14px}
+button.secondary{background:#e7edf4;color:#23364d}button.green{background:var(--green)}button.danger{background:#f7e9e9;color:var(--red)}button:disabled{opacity:.45;cursor:not-allowed}
+.status{margin-left:auto;color:var(--muted);font-size:13px}.status strong{color:var(--green)}
+.tabs{display:flex;gap:5px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:10px 0 18px}
+.tab{background:transparent;color:var(--muted);border-radius:8px 8px 0 0}.tab.active{background:var(--blue2);color:var(--blue)}
+.panel{display:none}.panel.active{display:block}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin:0 0 14px;box-shadow:0 2px 8px #2030470a}
+h2{font-size:20px;margin:0 0 12px}h3{font-size:17px;margin:0 0 8px}p.help{color:var(--muted);margin:4px 0 12px;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+label{display:block;font-weight:650;font-size:13px;margin:0 0 5px}input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;font:inherit;background:#fff;color:var(--ink)}textarea{min-height:78px;resize:vertical}
+.field{margin-bottom:12px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:0 0 auto}.row .grow{flex:1 1 220px}
+.class-card{border:1px solid var(--line);border-radius:10px;padding:14px;margin:12px 0;background:#fcfdff}.item{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.item small{color:var(--muted)}.item-actions{display:flex;gap:5px;flex-wrap:wrap}
+.pill{display:inline-block;background:var(--blue2);color:var(--blue);padding:2px 8px;border-radius:99px;font-size:12px}
+.empty{color:var(--muted);padding:18px;text-align:center;border:1px dashed var(--line);border-radius:9px}
+.timer{font-size:38px;font-weight:750;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#f4f7fb;border-radius:9px;padding:13px}.stat b{font-size:23px;display:block}
+.notice{background:#fff7e6;border:1px solid #f0d99f;border-radius:9px;padding:12px;color:#664b13;font-size:13px}
+.progress{height:9px;background:#e7edf4;border-radius:99px;overflow:hidden}.progress>span{display:block;height:100%;background:#39815b;width:0}
+@media(max-width:680px){.grid,.grid.three{grid-template-columns:1fr}.status{margin-left:0;width:100%}.statgrid{grid-template-columns:1fr 1fr}}
+.dropzone{border:2px dashed #91a9c3;border-radius:12px;padding:22px;text-align:center;background:#f5f9ff;cursor:pointer;margin:12px 0}.dropzone.dragover{background:#dceeff;border-color:#285b91}.resource-inline{border:1px solid #dce3eb;border-radius:9px;padding:12px;margin-top:12px}.resource-inline .item{align-items:center}.resource-inline h3{margin-bottom:8px}.resource-preview{margin-top:12px}
+.media-tools{margin-top:12px;padding:14px;border:1px solid #cbd7e5;border-radius:10px;background:#f7faff}.media-tools .row{margin:8px 0;flex-wrap:wrap}.media-tools button{white-space:nowrap}.media-tools input[type=range]{width:180px}.media-tools .loop-status{font-size:.9rem;font-weight:600}.media-tools .timecode{font-variant-numeric:tabular-nums}
+.wave-wrap{margin:12px 0;padding:12px;background:#101c2d;border-radius:12px;color:#e5edf8}.wave-canvas{display:block;width:100%;height:130px;cursor:crosshair;touch-action:none;border-radius:6px}.wave-help{font-size:12px;opacity:.85;margin-top:6px}.wave-wrap .row{margin-top:9px}.wave-wrap button{font-size:12px}
+
+.pdf-workspace{margin:14px 0;border:1px solid #b7c7d9;border-radius:12px;background:#fff;overflow:hidden}.pdf-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:9px;background:#edf3fa}.pdf-bar strong{flex:1;min-width:130px}.pdf-frame{height:65vh;min-height:220px;resize:both;overflow:auto;width:100%;max-width:100%}.pdf-frame iframe{width:100%;height:100%;border:0;background:white}.pdf-workspace:fullscreen{display:flex;flex-direction:column;width:100%;height:100%;border-radius:0}.pdf-workspace:fullscreen .pdf-frame{flex:1;height:auto;resize:none;min-height:0}.floating-player{position:fixed!important;left:24px;top:24px;right:auto;bottom:auto;width:min(470px,calc(100vw - 36px));height:430px;min-width:260px;min-height:160px;max-height:95vh;overflow:auto;z-index:2147483647;background:white;border:2px solid #5c86af;border-radius:12px;box-shadow:0 12px 40px #14223877;padding:12px;resize:both}.floating-player video{max-height:none!important}.floating-player .wave-canvas{height:95px}.floating-player .media-topbar{cursor:move;touch-action:none;user-select:none}.media-topbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.media-topbar strong{flex:1}.pdf-workspace:fullscreen .pdf-fullscreen-player{position:absolute!important;z-index:2147483647!important;resize:both;overflow:auto;box-shadow:0 10px 35px #0007}
+.speed-picker{position:relative;margin-left:auto}.speed-menu[hidden]{display:none!important}.speed-menu{position:absolute;bottom:calc(100% + 5px);right:0;z-index:2147483647;display:grid;grid-template-columns:repeat(3,minmax(64px,1fr));gap:5px;padding:8px;background:white;border:1px solid #a7b9cf;border-radius:9px;box-shadow:0 5px 20px #0003}.speed-menu button[aria-pressed=true]{background:#195c91;color:white}
+.wave-actions{padding:4px 0 8px}.wave-actions button{font-size:13px}.wave-canvas{cursor:crosshair}
+.media-transport{margin-top:10px!important;margin-bottom:6px!important}.media-transport #mediaPlayPause{min-width:105px}.media-tools .loop-status:empty{display:none}.media-tools:fullscreen{overflow:auto;background:#fff;padding:20px}.resource-preview:fullscreen{overflow:auto;background:white}
+
+.media-control-scroll{overflow-x:visible;overflow-y:visible;width:100%;padding:7px 2px 13px;scrollbar-width:thin}
+.media-control-strip{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;min-width:0}
+.media-control-strip>*{flex:none}
+.media-control-strip button{font-size:12px;padding:8px 10px}
+.media-control-strip .speed-picker{margin-left:0}
+.media-control-strip .loop-status,.media-control-strip .timecode{white-space:nowrap;font-size:12px}
+.player-expanded{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-height:none!important;max-width:none!important;z-index:2147483647!important;background:white!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:14px!important;overflow:auto!important;resize:none!important}
+.player-expanded video{max-height:none!important;width:100%!important;object-fit:contain}
+.player-expanded .wave-canvas{height:130px}
+.player-expanded-open{overflow:hidden}
+.player-expanded .speed-menu{position:fixed;left:50%;right:auto;bottom:90px;transform:translateX(-50%)}
+
+.media-video-region{height:220px;min-height:75px;overflow:hidden;background:#111827;border-radius:6px}
+.media-video-region.audio-region{height:auto;background:transparent}
+.media-video-region.audio-region audio{height:54px}
+.media-splitter{height:24px;margin:5px 0 8px;background:#dce8f5;color:#234b73;cursor:row-resize;touch-action:none;border-radius:6px;text-align:center;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;user-select:none}
+.media-splitter:hover{background-color:#d9e8f8}
+.media-splitter[hidden]{display:none}
+.media-help-btn{margin:0}.media-help-text[hidden]{display:none}
+.media-help-text{position:fixed;right:18px;bottom:22px;width:min(520px,calc(100vw - 36px));max-height:70vh;overflow:auto;z-index:2147483647;box-shadow:0 12px 35px #0005;padding:14px;border:1px solid #b7c7d9;border-radius:8px;background:#f1f6fb;font-size:13px;line-height:1.5}
+.media-help-text p{margin:7px 0}
+.floating-player .media-video-region{min-height:85px}
+.floating-player .media-video-region.audio-region{height:auto}
+.player-expanded .media-video-region{min-height:85px}
+
+.media-control-strip .help-popover-anchor{flex:none}
+.media-video-region{flex:none}
+.media-splitter:focus-visible{outline:3px solid #2875bc}
+.player-expanded .media-video-region video,.floating-player .media-video-region video{height:100%!important;max-height:none!important}
+
+/* Mini player: hide the waveform and keep compact, scrollable transport controls. */
+.mini-media-player .wave-wrap{display:none!important}
+.mini-media-player .media-tools{padding:5px 3px;margin-top:4px;border:0;background:transparent}
+.mini-media-player .media-control-scroll{margin:0}
+.mini-media-player .media-control-strip{gap:5px}
+.mini-media-player .media-control-strip button{padding:5px 8px;font-size:12px}
+.mini-media-player .media-video-region{min-height:75px}
+.mini-media-player .media-splitter{display:none!important}
+.mini-media-player.floating-player{min-height:145px}
+
+/* v28: mini mode uses icon-only controls and eliminates vertical padding. */
+.mini-media-player .media-tools{margin-top:0!important;padding:0!important;border:0!important;border-radius:0!important}
+.mini-media-player .media-control-scroll{padding:0!important;margin:0!important}
+.mini-media-player .media-control-strip{gap:3px!important}
+.mini-media-player .media-control-strip button{font-size:0!important;line-height:1!important;min-width:29px;height:29px;padding:3px 5px!important;border-radius:5px}
+.mini-media-player .media-control-strip button::before{font-size:17px;line-height:1;display:inline-block;vertical-align:middle}
+.mini-media-player #mediaPlayPause::before{content:'⏯'}
+.mini-media-player #mediaPlayStart::before{content:'⏮'}
+.mini-media-player #jumpA::before{content:'↤'}
+.mini-media-player #waveStart::before{content:'['}
+.mini-media-player #waveEnd::before{content:']'}
+.mini-media-player #toggleLoop::before{content:'↻'}
+.mini-media-player #clearLoop::before{content:'✕'}
+.mini-media-player #jumpBack::before{content:'↶'}
+.mini-media-player #jumpForward::before{content:'↷'}
+.mini-media-player #mediaHelp::before{content:'?'}
+.mini-media-player #speedButton{font-size:11px!important;min-width:60px;padding:3px 5px!important}
+.mini-media-player .speed-menu button{font-size:12px!important;min-width:42px}
+.mini-media-player .speed-menu button::before{content:none!important}
+.mini-media-player .media-video-region{margin-bottom:0!important;border-radius:4px 4px 0 0}
+.mini-media-player .media-topbar{margin-bottom:3px!important}
+
+/* v29: mini player tightly hugs its visible content, without a blank band. */
+.mini-media-player.floating-player{height:auto!important;min-height:0!important;max-height:calc(100dvh - 20px);overflow:visible!important;padding:5px!important;width:min(420px,calc(100vw - 20px))!important}
+.mini-media-player .media-topbar{margin:0 0 3px!important;gap:3px!important;flex-wrap:nowrap!important;min-height:0!important}
+.mini-media-player .media-topbar strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:1.15}
+.mini-media-player .media-topbar button{font-size:10px;padding:3px 5px;border-radius:4px;white-space:nowrap}
+.mini-media-player .media-video-region{height:155px!important;min-height:0!important;max-height:155px!important;padding:0!important;margin:0!important;display:block!important}
+.mini-media-player .media-video-region video{height:100%!important;max-height:100%!important;margin:0!important;padding:0!important;display:block!important}
+.mini-media-player .media-video-region.audio-region{height:36px!important;max-height:36px!important;background:transparent}
+.mini-media-player .media-video-region.audio-region audio{height:36px!important}
+.mini-media-player .media-tools{display:block!important;height:auto!important;min-height:0!important;line-height:1!important;overflow:visible!important}
+.mini-media-player .media-control-scroll{height:32px!important;min-height:0!important;overflow-x:auto!important;overflow-y:hidden!important;display:block!important;scrollbar-width:none!important}
+.mini-media-player .media-control-scroll::-webkit-scrollbar{display:none}
+.mini-media-player .media-control-strip{height:29px!important;min-height:0!important;align-items:center!important}
+.mini-media-player .media-control-strip button{margin:0!important;vertical-align:middle!important}
+.mini-media-player .media-control-strip .speed-picker{height:29px!important}
+.mini-media-player .help-popover-anchor{height:29px!important}
+.mini-media-player .wave-wrap,.mini-media-player .media-splitter{display:none!important}
+.mini-media-player .resource-preview{margin:0!important}
+
+.class-resource-summary{margin:10px 0;padding:10px;border:1px solid #d2dfed;border-radius:8px;background:#f7fafd}
+.class-resource-entry{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:5px 0;border-top:1px solid #e0e8f0;flex-wrap:wrap}
+.class-resource-entry span{min-width:0;overflow-wrap:anywhere}
+.class-resource-entry button{font-size:12px;padding:6px 8px}
+
+/* v37: fullscreen mini player is a video-first layout with bottom transport. */
+.player-expanded.mini-media-player{display:flex!important;flex-direction:column!important;overflow:hidden!important;padding:8px!important;gap:0!important;box-sizing:border-box!important}
+.player-expanded.mini-media-player>.media-topbar{flex:0 0 auto!important;margin:0 0 5px!important;padding:0!important}
+.player-expanded.mini-media-player>.media-video-region:not(.audio-region){flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important;display:flex!important;align-items:center;justify-content:center;overflow:hidden!important}
+.player-expanded.mini-media-player>.media-video-region video{width:100%!important;height:100%!important;max-height:100%!important;object-fit:contain!important}
+.player-expanded.mini-media-player>.media-splitter{display:none!important}
+.player-expanded.mini-media-player>.media-tools{flex:0 0 auto!important;margin:0!important;padding:0!important;min-height:0!important;overflow:visible!important}
+.player-expanded.mini-media-player .media-control-scroll{padding:2px 0 0!important;margin:0!important;overflow-x:auto!important}
+.player-expanded.mini-media-player .media-control-strip{min-height:34px!important}
+.player-expanded.mini-media-player>.media-video-region.audio-region{flex:1 1 auto!important;display:flex;align-items:center;justify-content:center}
+
+/* Video Practice View: automatic, distraction-free workspace for local videos. */
+.video-practice-view.player-expanded{display:flex!important;flex-direction:column!important;gap:7px!important;padding:10px 14px!important;overflow:hidden!important;background:#f7f9fc!important}
+.video-practice-view>.media-topbar{flex:0 0 auto!important;min-height:0!important;margin:0!important;cursor:default!important}
+.video-practice-view>.media-topbar strong{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.video-practice-view>.media-video-region:not(.audio-region){flex:1 1 auto!important;min-height:120px!important;height:auto!important;max-height:none!important;width:100%!important;display:flex!important;align-items:center;justify-content:center;background:#10131a!important}
+.video-practice-view>.media-video-region video{height:100%!important;width:100%!important;max-height:100%!important;object-fit:contain!important}
+.video-practice-view>.media-splitter{flex:0 0 15px!important;height:15px!important;margin:0!important}
+.video-practice-view>.media-tools{flex:0 0 auto!important;min-height:0!important;max-height:34vh!important;overflow-y:auto!important;margin:0!important;padding:4px 6px!important}
+.video-practice-view .wave-wrap{display:block!important}
+.video-practice-view .wave-canvas{height:105px!important;max-height:16vh!important}
+.video-practice-view .media-control-scroll{padding-bottom:5px!important}
+.video-practice-view.mini-media-player .wave-wrap{display:block!important}
+@media(max-height:640px){.video-practice-view .wave-canvas{height:65px!important}.video-practice-view>.media-tools{max-height:40vh!important}}
+
+/* Floating video retains its video, waveform and transport and can be resized. */
+.floating-player:has(> .media-video-region:not(.audio-region)){display:flex!important;flex-direction:column!important;gap:5px!important;box-sizing:border-box!important;min-width:300px!important;min-height:260px!important;max-width:95vw!important;max-height:95vh!important;resize:both!important;overflow:auto!important}
+.floating-player:has(> .media-video-region:not(.audio-region))>.media-topbar{flex:0 0 auto!important}
+.floating-player:has(> .media-video-region:not(.audio-region))>.media-video-region{flex:1 1 45%!important;height:auto!important;min-height:95px!important;max-height:none!important}
+.floating-player:has(> .media-video-region:not(.audio-region))>.media-video-region video{width:100%!important;height:100%!important;object-fit:contain!important}
+.floating-player:has(> .media-video-region:not(.audio-region))>.media-splitter{flex:0 0 18px!important;margin:0!important}
+.floating-player:has(> .media-video-region:not(.audio-region))>.media-tools{flex:0 0 auto!important;max-height:43%!important;overflow-y:auto!important;margin:0!important}
+.floating-player:has(> .media-video-region:not(.audio-region)) .wave-wrap{display:block!important}
+.floating-player:has(> .media-video-region:not(.audio-region)) .wave-canvas{height:75px!important}
+
+/* True browser fullscreen for video, including a video previously in Always on Top. */
+.media-viewer-true-fullscreen:fullscreen{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;min-width:0!important;min-height:0!important;resize:none!important;overflow:hidden!important;z-index:2147483647!important;border:0!important;border-radius:0!important;box-sizing:border-box!important;padding:10px!important;background:#10131a!important;display:flex!important;flex-direction:column!important;gap:6px!important}
+.media-viewer-true-fullscreen:fullscreen>.media-topbar{flex:0 0 auto!important;color:#fff!important;cursor:default!important}
+.media-viewer-true-fullscreen:fullscreen>.media-video-region{flex:1 1 auto!important;min-height:0!important;height:auto!important;max-height:none!important;width:100%!important;display:flex!important;align-items:center;justify-content:center}
+.media-viewer-true-fullscreen:fullscreen>.media-video-region video{width:100%!important;height:100%!important;max-height:100%!important;object-fit:contain!important}
+.media-viewer-true-fullscreen:fullscreen>.media-splitter{flex:0 0 15px!important}
+.media-viewer-true-fullscreen:fullscreen>.media-tools{flex:0 0 auto!important;max-height:32vh!important;overflow-y:auto!important;background:#fff!important;border-radius:8px!important;padding:6px!important}
+.media-viewer-true-fullscreen:fullscreen .wave-wrap{display:block!important}
+
+/* Cross-monitor floating video lives in a separate Document Picture-in-Picture window. */
+.pip-video-player{display:flex!important;flex-direction:column!important;gap:5px!important;box-sizing:border-box!important;position:relative!important;inset:auto!important;left:auto!important;top:auto!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;resize:none!important;overflow:hidden!important;padding:6px!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important}
+.pip-video-player>.media-topbar{flex:0 0 auto!important;cursor:default!important;flex-wrap:wrap!important}
+.pip-video-player .media-fullscreen-btn{display:none!important}
+.media-timecode{display:inline-flex;align-items:center;white-space:nowrap;font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;color:#23364d;padding:4px 6px;background:#e7edf4;border-radius:5px}
+.pip-video-player>.media-video-region{flex:1 1 auto!important;min-height:85px!important;height:auto!important;max-height:none!important;width:100%!important}
+.pip-video-player>.media-video-region video{width:100%!important;height:100%!important;object-fit:contain!important}
+.pip-video-player>.media-splitter{display:none!important}
+.pip-video-player>.media-tools{flex:0 0 auto!important;max-height:42%!important;min-height:0!important;overflow-y:auto!important;margin:0!important;padding:4px!important}
+.pip-video-player .wave-wrap{display:none!important}
+.pip-video-player .wave-canvas{height:60px!important}
+
+
+/* V43 waveform zoom controls; keep them accessible in a compact floating player. */
+.wave-zoom-controls{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px}
+.wave-zoom-controls button{padding:4px 7px;font-size:11px}
+.wave-zoom-controls span{font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* V42: single-line file name and bottom-anchored transport in compact floating video. */
+.media-topbar{min-width:0!important}
+.media-topbar>strong{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;display:block!important}
+.pip-video-player>.media-topbar{flex-wrap:nowrap!important;min-width:0!important}
+.pip-video-player>.media-topbar>strong{flex:1 1 0!important}
+.pip-video-player>.media-topbar>button{flex:0 0 auto!important;white-space:nowrap!important}
+.pip-video-player>.media-video-region{flex:1 1 0!important;min-height:60px!important;overflow:hidden!important}
+.pip-video-player>.media-splitter{display:none!important}
+.pip-video-player>.media-tools{flex:0 0 auto!important;max-height:min(52%,260px)!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;margin-top:auto!important}
+.pip-video-player .wave-wrap{display:none!important}
+.pip-video-player .wave-canvas{height:46px!important}
+.pip-video-player .wave-help{font-size:10px!important;margin-top:2px!important}
+@media(max-height:430px){.pip-video-player>.media-tools{max-height:58%!important}.pip-video-player .wave-canvas{height:32px!important}}
+
+.mcb-overlay:not([hidden]){position:fixed;inset:0;z-index:9999;background:rgba(12,24,40,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.mcb-dialog{width:min(650px,100%);max-height:92vh;overflow:auto;background:white;color:#172d46;border-radius:12px;padding:22px;box-shadow:0 12px 45px #0005}
+.mcb-dialog h2{margin:0 0 12px}.mcb-dialog h3{margin:16px 0 8px}
+.mcb-library-chooser,.mcb-attached{margin:12px 0;padding:10px;border:1px solid #d5e0ec;border-radius:8px}
+.mcb-library-chooser label{display:block;padding:5px;border-bottom:1px solid #eee}
+.mcb-attached:empty{display:none}
+.mcb-resource-line{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px;border-bottom:1px solid #eee}
+.mcb-resource-line button{padding:5px 9px}
+.mcb-youtube-btn{background:#1264b3!important;color:white!important}
+.mcb-link-btn{background:#d9ecff!important;color:#11538c!important}
+/* V55.3: cloud save status is visible directly on its button. */
+.cloud-save-btn[data-state="saved"]{background:#20804b!important;border-color:#20804b!important;color:#fff!important}
+.cloud-save-btn[data-state="saving"]{background:#2563a6!important;border-color:#2563a6!important;color:#fff!important;cursor:progress}
+.cloud-save-btn[data-state="dirty"]{background:#a56610!important;border-color:#a56610!important;color:#fff!important}
+.cloud-save-btn[data-state="error"]{background:#ad3030!important;border-color:#ad3030!important;color:#fff!important}
+.cloud-save-btn[data-state="idle"]{background:#527089!important;border-color:#527089!important;color:#fff!important}
+.media-tools .mcb-play-emphasis{background:#13a85d!important;color:#fff!important;border:2px solid #08783f!important;font-weight:800!important;box-shadow:0 0 0 2px #13a85d33;min-width:88px}.media-tools .mcb-play-emphasis:hover{background:#07864a!important}.media-tools #mediaHelp{font-size:19px!important;font-weight:900!important;min-width:38px}.media-tools .media-control-strip button:hover{filter:brightness(1.08)}
+/* V55.7.19: responsive multirow transport and wider waveform */
+@media(max-width:680px){.media-control-strip{display:flex!important;flex-wrap:wrap!important;width:100%!important;min-width:0!important;gap:5px!important}.media-control-scroll{overflow-x:visible!important;overflow-y:visible!important;height:auto!important;max-height:none!important}.media-control-strip button{white-space:nowrap;padding:8px 9px}}
+
+/* V55.7.25: approved consistent controls; CSS-only visuals preserve the V55.7.24 player logic. */
+.media-tools .media-control-scroll{height:auto!important;max-height:none!important;overflow:visible!important;padding:7px 2px 13px!important}
+.media-tools .media-control-strip{height:auto!important;min-height:0!important;display:flex!important;align-items:flex-start!important;flex-wrap:wrap!important;gap:8px!important}
+.media-tools .mcb-control-unit{display:flex;flex-direction:column;align-items:center;gap:5px;flex:0 0 auto;min-width:70px}
+.media-tools .mcb-control-unit>button,.media-tools .mcb-control-unit>.help-popover-anchor>button{display:flex!important;align-items:center!important;justify-content:center!important;width:68px!important;height:68px!important;min-width:68px!important;max-width:68px!important;padding:0!important;margin:0!important;border:2px solid #80b7ec!important;border-radius:13px!important;background:linear-gradient(#f3faff,#a9d4ff)!important;box-shadow:inset 0 2px 2px #fff,0 3px 5px #194b7940!important;color:transparent!important;font-size:0!important;line-height:0!important;overflow:hidden}
+.media-tools .mcb-control-unit>button::before,.media-tools .mcb-control-unit>.help-popover-anchor>button::before{content:''!important;display:block!important;flex:0 0 48px!important;width:48px!important;height:43px!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important}
+.media-tools .mcb-control-label{font-size:12px!important;line-height:1.15!important;font-weight:800!important;color:#18375d!important;text-align:center;max-width:84px;min-height:27px}
+.media-tools .mcb-control-unit #mediaPlayPause{background:linear-gradient(#20d313,#07852d)!important;border-color:#06782c!important;box-shadow:inset 0 2px 2px #7cff72,0 3px 5px #14532d60!important}
+.media-tools .mcb-control-unit #mediaPlayPause::before{filter:brightness(0) invert(1)}
+.media-tools .mcb-control-unit #clearLoop{background:linear-gradient(#285586,#102f59)!important;border-color:#102d53!important}
+.media-tools .mcb-control-unit #toggleLoop[aria-pressed=true]{background:linear-gradient(#b9dcff,#77b0ee)!important;border-color:#337fce!important}
+.media-tools .mcb-control-unit .help-popover-anchor{height:68px!important;display:block!important}
+.media-tools .mcb-speed-unit{min-width:122px}
+.media-tools .mcb-speed-unit .speed-picker{height:68px!important;position:relative!important;margin:0!important}
+.media-tools .mcb-speed-unit #speedButton{width:122px!important;min-width:122px!important;height:68px!important;min-height:68px!important;padding:6px!important;border-radius:13px!important;background:linear-gradient(#f3faff,#a9d4ff)!important;border:2px solid #458ee2!important;box-shadow:inset 0 2px 2px #fff,0 3px 5px #194b7940!important;color:#18375d!important;font-size:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important}
+.media-tools .mcb-speed-unit #speedButton::before{content:'SPEED';display:block;font-size:22px!important;line-height:1.05!important;font-weight:900!important}
+.media-tools .mcb-speed-unit #speedButton::after{content:attr(data-speed);display:block;font-size:27px!important;line-height:1.1!important;font-weight:900!important}
+.media-tools .mcb-speed-unit .mcb-control-label{visibility:hidden}
+.media-tools .mini-media-player .media-control-strip button::before{font-size:initial!important}
+.media-tools .mcb-control-unit>button:hover{filter:brightness(1.07)}
+.media-tools .mcb-control-unit>button:focus-visible{outline:3px solid #f4a632!important;outline-offset:2px}
+/* Compact/floating views must wrap rather than shrink controls to unreadable icons. */
+.mini-media-player .media-tools .media-control-scroll,.floating-player .media-tools .media-control-scroll{height:auto!important;overflow:visible!important}
+.mini-media-player .media-tools .media-control-strip{height:auto!important;flex-wrap:wrap!important}
+.mini-media-player .media-tools .media-control-strip .mcb-control-unit>button{width:68px!important;height:68px!important;min-width:68px!important}
+.mini-media-player .media-tools .media-control-strip .mcb-speed-unit .speed-picker{height:68px!important}
+.mini-media-player .media-tools .media-control-strip .mcb-speed-unit #speedButton{font-size:0!important;width:122px!important;height:68px!important}
+.mini-media-player .media-tools .media-control-strip button::before{font-size:initial!important}
+.media-tools .mcb-control-unit #jumpToIn::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Crect%20x%3D%225%22%20y%3D%227%22%20width%3D%228%22%20height%3D%2234%22%2F%3E%3Cpath%20d%3D%22M17%2024%2051%204V44Z%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #jumpToOut::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Cpath%20d%3D%22M9%204%2043%2024%209%2044Z%22%2F%3E%3Crect%20x%3D%2247%22%20y%3D%227%22%20width%3D%228%22%20height%3D%2234%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #toggleLoop::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Cpath%20d%3D%22M12%208H43V2L57%2017%2043%2032V25H12Q5%2025%205%2019V15Q5%208%2012%208Z%22%2F%3E%3Cpath%20d%3D%22M48%2040H17V46L3%2031%2017%2016V23H48Q55%2023%2055%2029V33Q55%2040%2048%2040Z%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #mediaPlayPause::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Cpath%20d%3D%22M12%203%2053%2024%2012%2045Z%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #waveStart::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Cpath%20d%3D%22M43%205H17V43H43%22%20fill%3D%22none%22%20stroke%3D%22%2318375d%22%20stroke-width%3D%229%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #waveEnd::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Cpath%20d%3D%22M17%205H43V43H17%22%20fill%3D%22none%22%20stroke%3D%22%2318375d%22%20stroke-width%3D%229%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #nudgeLeft::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Cpath%20d%3D%22M7%2024%2035%204V44Z%22%2F%3E%3Crect%20x%3D%2241%22%20y%3D%229%22%20width%3D%228%22%20height%3D%2230%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #nudgeRight::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Crect%20x%3D%2211%22%20y%3D%229%22%20width%3D%228%22%20height%3D%2230%22%2F%3E%3Cpath%20d%3D%22M53%2024%2025%204V44Z%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #jumpBack::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Cpath%20d%3D%22M3%2024%2028%204V44ZM29%2024%2054%204V44Z%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #jumpForward::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Cpath%20d%3D%22M6%204%2031%2024%206%2044ZM32%204%2057%2024%2032%2044Z%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #clearLoop::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Cpath%20d%3D%22M25%208H11V40H25M35%208H49V40H35%22%20fill%3D%22none%22%20stroke%3D%22%23e0edff%22%20stroke-width%3D%229%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #mediaHelp::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Ctext%20x%3D%2230%22%20y%3D%2242%22%20font-size%3D%2248%22%20font-weight%3D%22900%22%20text-anchor%3D%22middle%22%3E%3F%3C%2Ftext%3E%3C%2Fsvg%3E")!important}
+.media-tools .mcb-control-unit #mediaPlayPause.mcb-is-playing::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22white%22%3E%3Crect%20x%3D%2212%22%20y%3D%224%22%20width%3D%2213%22%20height%3D%2240%22%20rx%3D%222%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%224%22%20width%3D%2213%22%20height%3D%2240%22%20rx%3D%222%22%2F%3E%3C%2Fsvg%3E")!important;filter:none!important}
+@media(max-width:480px){.media-tools .media-control-strip{gap:5px!important}.media-tools .mcb-control-unit{min-width:68px}.media-tools .mcb-control-label{font-size:11px!important}}
+
+/* V55.7.26: compact audio-float toolbar; full-sized controls elsewhere. */
+.floating-player.mini-media-player .media-tools .mcb-control-unit{min-width:48px!important;gap:3px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip{gap:5px!important}
+.floating-player.mini-media-player .media-tools .mcb-control-unit>button,
+.floating-player.mini-media-player .media-tools .mcb-control-unit>.help-popover-anchor>button{
+  width:46px!important;height:46px!important;min-width:46px!important;max-width:46px!important;border-radius:9px!important;
+}
+.floating-player.mini-media-player .media-tools .mcb-control-unit>button::before,
+.floating-player.mini-media-player .media-tools .mcb-control-unit>.help-popover-anchor>button::before{
+  width:34px!important;height:31px!important;flex-basis:34px!important;
+}
+.floating-player.mini-media-player .media-tools .mcb-control-label{font-size:9px!important;max-width:58px!important;min-height:22px!important}
+.floating-player.mini-media-player .media-tools .mcb-control-unit .help-popover-anchor{height:46px!important}
+.floating-player.mini-media-player .media-tools .mcb-speed-unit{min-width:88px!important}
+.floating-player.mini-media-player .media-tools .mcb-speed-unit .speed-picker{height:46px!important}
+.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton{
+  width:88px!important;min-width:88px!important;max-width:88px!important;height:46px!important;min-height:46px!important;padding:3px!important;
+}
+.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton::before{font-size:14px!important}
+.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton::after{font-size:18px!important}
+.floating-player.mini-media-player .media-topbar .media-fullscreen-btn,
+.floating-player.mini-media-player .media-topbar .mcb-float-audio-close{display:none!important}
+
+
+/* V55.7.27: responsive player controls across iPhone, docked and floating views */
+@media (max-width: 700px){
+ .media-tools .media-control-scroll{overflow:visible!important;max-width:100%!important;height:auto!important}
+ .media-tools .media-control-strip{display:flex!important;flex-wrap:wrap!important;gap:6px!important;justify-content:center!important;align-items:flex-start!important;width:100%!important}
+ .media-tools .mcb-control-unit{min-width:0!important;gap:3px!important;flex:0 0 auto!important}
+ .media-tools .mcb-control-unit>button,.media-tools .mcb-control-unit>.help-popover-anchor>button{width:clamp(36px,11vw,54px)!important;min-width:clamp(36px,11vw,54px)!important;max-width:clamp(36px,11vw,54px)!important;height:clamp(40px,12vw,54px)!important;padding:0!important;border-radius:9px!important}
+ .media-tools .mcb-control-unit>button::before,.media-tools .mcb-control-unit>.help-popover-anchor>button::before{width:clamp(26px,8vw,39px)!important;height:clamp(25px,8vw,37px)!important;flex-basis:clamp(26px,8vw,39px)!important}
+ .media-tools .mcb-control-unit .help-popover-anchor{height:clamp(40px,12vw,54px)!important}
+ .media-tools .mcb-control-label{font-size:clamp(8px,2.5vw,11px)!important;max-width:clamp(42px,13vw,62px)!important;min-height:24px!important;line-height:1.1!important;overflow-wrap:normal!important}
+ .media-tools .mcb-speed-unit{min-width:clamp(72px,23vw,104px)!important}
+ .media-tools .mcb-speed-unit .speed-picker{height:clamp(40px,12vw,54px)!important}
+ .media-tools .mcb-speed-unit #speedButton{width:clamp(72px,23vw,104px)!important;min-width:clamp(72px,23vw,104px)!important;max-width:clamp(72px,23vw,104px)!important;height:clamp(40px,12vw,54px)!important;min-height:clamp(40px,12vw,54px)!important;padding:2px!important}
+ .media-tools .mcb-speed-unit #speedButton::before{font-size:clamp(12px,4vw,18px)!important}
+ .media-tools .mcb-speed-unit #speedButton::after{font-size:clamp(16px,5vw,23px)!important}
+}
+@media (max-width: 370px){
+ .media-tools .media-control-strip{gap:4px!important}
+ .media-tools .mcb-control-unit>button,.media-tools .mcb-control-unit>.help-popover-anchor>button{width:36px!important;min-width:36px!important;max-width:36px!important;height:40px!important}
+ .media-tools .mcb-control-unit>button::before,.media-tools .mcb-control-unit>.help-popover-anchor>button::before{width:27px!important;height:27px!important;flex-basis:27px!important}
+}
+/* Audio floating: keep Dock Player, remove Full Screen and Float/Close controls */
+.floating-player.mini-media-player .media-topbar .media-fullscreen-btn,
+.floating-player.mini-media-player .media-topbar .mcb-float-audio-close{display:none!important}
+
+
+/* V55.7.28: desktop docked audio gets more waveform, no unused native-control band. */
+@media (min-width: 701px){
+ .resource-preview:not(.floating-player):not(.player-expanded):has(> .media-video-region.audio-region) > .media-video-region.audio-region,
+ .resource-preview:not(.floating-player):not(.player-expanded):has(> .media-video-region.audio-region) > .media-splitter{display:none!important}
+ .resource-preview:not(.floating-player):not(.player-expanded):has(> .media-video-region.audio-region) > .media-tools{margin-top:5px!important;padding-top:8px!important}
+ .resource-preview:not(.floating-player):not(.player-expanded):has(> .media-video-region.audio-region) .wave-wrap{margin-top:4px!important}
+ .resource-preview:not(.floating-player):not(.player-expanded):has(> .media-video-region.audio-region) .wave-canvas{height:195px!important}
+}
+/* V55.7.28: phone-sized icons comparable to the former compact text buttons. */
+@media (max-width:700px){
+ .media-tools .media-control-strip{gap:3px!important;justify-content:flex-start!important}
+ .media-tools .mcb-control-unit,.mini-media-player .media-tools .mcb-control-unit{min-width:0!important;gap:2px!important}
+ .media-tools .mcb-control-unit>button,.media-tools .mcb-control-unit>.help-popover-anchor>button,
+ .mini-media-player .media-tools .media-control-strip .mcb-control-unit>button,
+ .floating-player.mini-media-player .media-tools .mcb-control-unit>button,
+ .floating-player.mini-media-player .media-tools .mcb-control-unit>.help-popover-anchor>button{
+  width:clamp(26px,7.4vw,32px)!important;min-width:clamp(26px,7.4vw,32px)!important;max-width:clamp(26px,7.4vw,32px)!important;height:clamp(29px,8vw,35px)!important;border-radius:6px!important;border-width:1px!important
+ }
+ .media-tools .mcb-control-unit>button::before,.media-tools .mcb-control-unit>.help-popover-anchor>button::before,
+ .floating-player.mini-media-player .media-tools .mcb-control-unit>button::before,
+ .floating-player.mini-media-player .media-tools .mcb-control-unit>.help-popover-anchor>button::before{
+  width:clamp(19px,5.7vw,25px)!important;height:clamp(19px,5.7vw,25px)!important;flex:0 0 clamp(19px,5.7vw,25px)!important
+ }
+ .media-tools .mcb-control-label,.floating-player.mini-media-player .media-tools .mcb-control-label{font-size:8px!important;line-height:1.1!important;max-width:39px!important;min-height:18px!important;white-space:normal!important}
+ .media-tools .mcb-control-unit .help-popover-anchor,.floating-player.mini-media-player .media-tools .mcb-control-unit .help-popover-anchor{height:clamp(29px,8vw,35px)!important}
+ .media-tools .mcb-speed-unit,.floating-player.mini-media-player .media-tools .mcb-speed-unit{min-width:56px!important}
+ .media-tools .mcb-speed-unit .speed-picker,.mini-media-player .media-tools .media-control-strip .mcb-speed-unit .speed-picker,.floating-player.mini-media-player .media-tools .mcb-speed-unit .speed-picker{height:clamp(29px,8vw,35px)!important}
+ .media-tools .mcb-speed-unit #speedButton,.mini-media-player .media-tools .media-control-strip .mcb-speed-unit #speedButton,.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton{
+  width:56px!important;min-width:56px!important;max-width:56px!important;height:clamp(29px,8vw,35px)!important;min-height:clamp(29px,8vw,35px)!important;border-radius:6px!important;padding:1px!important
+ }
+ .media-tools .mcb-speed-unit #speedButton::before,.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton::before{font-size:10px!important}
+ .media-tools .mcb-speed-unit #speedButton::after,.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton::after{font-size:13px!important}
+ .media-tools{padding:6px!important}
+ .media-tools .media-control-scroll{padding:3px 0 5px!important}
+}
+
+/* V55.7.29 — floating AUDIO ONLY: compact controls regardless of desktop viewport.
+   Must be outside @media rules: floating window is narrow even on wide monitors. */
+.floating-player.mini-media-player .media-tools{padding:4px 6px!important}
+.floating-player.mini-media-player .media-tools .media-control-scroll{overflow:visible!important;max-width:100%!important}
+.floating-player.mini-media-player .media-tools .media-control-strip{display:flex!important;flex-wrap:wrap!important;justify-content:flex-start!important;gap:3px 4px!important;align-items:flex-start!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit{width:38px!important;min-width:38px!important;max-width:38px!important;gap:1px!important;flex:0 0 38px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit>button,
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit>.help-popover-anchor>button{
+ width:32px!important;min-width:32px!important;max-width:32px!important;height:30px!important;min-height:30px!important;max-height:30px!important;padding:2px!important;border-radius:6px!important
+}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit>button::before,
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit>.help-popover-anchor>button::before{
+ width:23px!important;height:22px!important;flex:0 0 23px!important;background-size:contain!important
+}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-label{font-size:8px!important;line-height:1.05!important;max-width:38px!important;min-height:17px!important;overflow-wrap:normal!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-control-unit .help-popover-anchor{height:30px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-speed-unit{width:66px!important;min-width:66px!important;max-width:66px!important;flex:0 0 66px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-speed-unit .speed-picker{height:30px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-speed-unit #speedButton{
+ width:64px!important;min-width:64px!important;max-width:64px!important;height:30px!important;min-height:30px!important;max-height:30px!important;padding:1px!important
+}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-speed-unit #speedButton::before{font-size:9px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip .mcb-speed-unit #speedButton::after{font-size:12px!important}
+
+</style>
+</head>
+<body>
+<header><h1>Music Course Builder</h1><p>Build a course, organize classes, and plan focused practice — V55.7.12 · YouTube Titles</p></header>
+<main>
+  <div class="card" id="cloudPanel" style="margin-bottom:14px">
+    <h2>Private Cloud Course Library <small style="font-weight:normal">V55.6 beta</small></h2>
+    <p class="help">Sign in to synchronize course text, classes, practice logs, and resource links. Imported audio, video and PDFs remain in this browser and must be imported separately on other devices.</p>
+    <div class="row" style="flex-wrap:wrap;gap:8px;align-items:center">
+      <span id="cloudUser">Local guest — not signed in</span>
+      <button class="secondary" id="cloudGoogle">Continue with Google</button>
+      <input id="cloudEmail" type="email" placeholder="Email" aria-label="Email" style="max-width:200px">
+      <input id="cloudPassword" type="password" placeholder="Music Course Builder password (6+ characters)" aria-label="Password" style="max-width:200px">
+      <button id="cloudSignIn">Sign in</button><button class="secondary" id="cloudRegister">Create account</button><button class="secondary" id="cloudSignOut" hidden>Sign out</button>
+    </div>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:10px">
+      <select id="cloudCourses" title="Selecting a course opens it automatically" aria-label="Cloud courses" style="min-width:200px;max-width:380px"><option>Sign in to see cloud courses</option></select>
+      <button id="cloudNew">New blank course</button><button id="cloudSave" type="button" class="cloud-save-btn" data-state="idle" aria-label="Save to cloud">Save to Cloud</button><button class="secondary" id="cloudCopy">Duplicate</button><button class="secondary" id="cloudRename">Rename</button><button class="danger" id="cloudDelete">Delete</button>
+    </div>
+    <p class="help">Select a course to open it automatically. The Save to Cloud button shows the current synchronization status.</p>
+    <p id="cloudActiveName" style="font-weight:700;margin:10px 0 4px">Active course: none — choose a cloud course</p>
+    <p id="cloudStatus" class="help" role="status" aria-live="polite">Cloud synchronization is inactive until sign-in. JSON backups remain available.</p>
+  </div>
+  <div class="toolbar">
+    <button class="green" id="saveBtn">Save</button>
+    <button id="saveAsBtn">Save As…</button>
+    <button class="secondary" id="openBtn">Open Course…</button><button class="secondary" id="reconnectBtn" hidden>Reconnect File</button>
+    <button class="secondary" id="newBtn">New Course</button>
+    <button class="secondary" id="backupBtn">Export Backup</button>
+    <button type="button" id="youtubeCompanionBtn" title="Open the separate YouTube practice player">▶ YouTube Player</button>
+    <span class="status" id="saveStatus">Not saved to a course file yet</span>
+  </div>
+  <div class="notice"><b>Cloud library:</b> Sign in and choose a cloud course to sync edits automatically. <b>Local files:</b> Save As and Open Course still work for JSON backups. Native Import File stays available; media files are stored only on this device. Keep independent JSON backups.</div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="builder">Course Builder</button>
+    
+    <button class="tab" data-tab="library">Practice Library</button><button class="tab" data-tab="resources">Local Resources</button>
+    <button class="tab" data-tab="next">Next Session</button>
+    <button class="tab" data-tab="progress">Progress</button>
+  </nav>
+
+  <section class="panel active" id="builder">
+    <div class="card">
+      <h2>Course details</h2>
+      <div class="grid">
+        <div class="field"><label for="courseName">Course name</label><input id="courseName" placeholder="e.g. Mandolin Studies"></div>
+        <div class="field"><label for="instrument">Instrument</label><input id="instrument" placeholder="e.g. Mandolin"></div>
+        <div class="field"><label for="level">Starting level</label><select id="level"><option>Beginner</option><option>Early intermediate</option><option>Intermediate</option><option>Advanced</option></select></div>
+        <div class="field"><label for="dailyTarget">Daily practice target (minutes)</label><input id="dailyTarget" type="number" min="1" value="60"></div>
+      </div>
+      <div class="field"><label for="goals">Course goals</label><textarea id="goals" placeholder="What would you like to be able to play or understand?"></textarea></div>
+    </div>
+    <div class="card">
+      <div class="row"><div class="grow"><h2>Classes</h2><p class="help">A class is a unit within your course. Add practice items, tunes, techniques, and resources to each class.</p></div><button id="addClassBtn">+ Add Class</button></div>
+      <div id="classes"></div>
+
+    </div>
+      <section id="practice">
+    <div class="card">
+      <h2>Class Practice Room</h2><p class="help">Start a class session or select an individual item. The timer and practice log stay inside the course.</p>
+      <div class="grid">
+        <div class="field"><label for="practiceClass">Class</label><select id="practiceClass"></select></div>
+        <div class="field"><label for="practiceItem">Practice item</label><select id="practiceItem"></select></div>
+      </div><div class="row"><button class="secondary" id="useClassTime">Use Class Time</button><button class="secondary" id="useItemTime">Use Item Time</button></div>
+      <div class="row"><div class="grow"><div class="timer" id="timerDisplay">00:00</div><div id="timerLabel" class="help">Timer stopped</div></div>
+        <div class="field"><label for="timerMinutes">Minutes</label><input id="timerMinutes" type="number" min="1" value="25" style="width:100px"></div>
+        <button id="startTimer">Start</button><button class="secondary" id="pauseTimer">Pause</button><button class="secondary" id="resetTimer">Reset</button>
+      </div>
+      <div class="resource-inline"><h3>Resources for this practice</h3><p class="help">Resources attached to the course, current class, and selected practice item appear here. Open PDFs, audio, and video without leaving the timer.</p><div id="practiceResources"></div><div class="row"><button class="secondary" id="practiceAttach">Attach Files to Selected Item</button></div><div id="practiceDrop" class="dropzone" tabindex="0" role="button">Drop PDF, audio or video files here to attach to this practice item, or click to browse</div><input id="practiceFileInput" type="file" multiple accept=".pdf,audio/*,video/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.mp4,.webm,.mov,.m4v" hidden>
+<div id="practiceResourceMessage" class="help"></div><div id="practicePdfPreview"></div><div id="practiceMediaPreview" class="resource-preview"></div></div>
+      <div class="field" style="margin-top:16px"><label for="rating">How did this skill go today? (1–5)</label><select id="rating"><option value="1">1 — Needs work</option><option value="2">2 — Inconsistent</option><option value="3" selected>3 — Developing</option><option value="4">4 — Reliable</option><option value="5">5 — Performance ready</option></select></div>
+      <button class="green" id="logPractice">Log practice &amp; rating</button>
+      <p id="ratingAdvice" class="help"></p>
+    </div>
+  </section>
+
+
+  </section>
+
+  <section class="panel" id="library">
+    <div class="card"><h2>Practice Library</h2><p class="help">All practice items from every class, collected in one place.</p><div id="libraryItems"></div></div>
+  </section>
+  <section class="panel" id="resources"><div class="card"><h2>Local Resource Library</h2>
+<p class="help">Attach PDFs, audio recordings and videos to your course, classes or practice items. Media files stay in this browser's storage; exported JSON contains their references, not the media itself. Reattach files when moving to another computer.</p>
+<div class="grid"><div class="field"><label for="resourceScope">Attach to</label><select id="resourceScope"></select></div>
+<div class="field"><label for="resourceFiles">Select local files</label><input id="resourceFiles" type="file" multiple accept=".pdf,audio/*,video/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.mp4,.webm,.mov,.m4v"></div></div>
+<div class="card" style="margin:12px 0;border:1px solid #b7c7d9;background:#f7faff"><h3>Smart Media Relinking · V55.6</h3>
+<p class="help">Use one folder for your media. Google Drive, iCloud Drive and Dropbox files can be selected through your device’s file picker. Files are matched to the <b>current course</b> by exact filename and type; nothing is uploaded to Firebase.</p>
+<div class="row"><button type="button" id="mediaChooseFolder">Designate Media Folder</button><button type="button" class="secondary" id="mediaChooseFiles">Relink All — Select Files</button><button type="button" class="secondary" id="mediaRetryFolder">Relink from Remembered Folder</button></div>
+<input type="file" id="mediaBulkFiles" multiple accept=".pdf,audio/*,video/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.mp4,.webm,.mov,.m4v" hidden>
+<p class="help" id="mediaFolderStatus" role="status" aria-live="polite">No folder designated on this device. On iPad, use Select Files if folder selection is unavailable.</p></div>
+<p class="help">Cloud sync shares resource names and links, not the audio/video/PDF bytes. On another device, use <b>Relink File</b> beside a resource to select the original media file; its course associations will be preserved.</p><div id="libraryDrop" class="dropzone" tabindex="0" role="button">Drop PDF, audio or video files here, or click to browse</div><button id="addResourceBtn">Attach Selected Files</button><p class="help" id="resourceMessage"></p><div id="resourceList"></div></div>
+<div class="card" id="resourcePreviewCard" hidden><div class="row"><h3 class="grow" id="resourcePreviewTitle"></h3><button class="secondary" id="closeResourcePreview">Close</button></div><div id="resourcePdfPreview"></div><div id="resourcePreview"></div></div>
+</section>
+  <section class="panel" id="next">
+    <div class="card"><h2>Plan your next session</h2>
+      <div class="field"><label for="nextFocus">Main focus</label><textarea id="nextFocus" placeholder="What deserves attention next time?"></textarea></div>
+      <div class="field"><label for="nextGoal">Specific goal</label><input id="nextGoal" placeholder="e.g. Play the passage cleanly at 90 bpm"></div>
+      <div class="field"><label for="nextNotes">Notes / reminders</label><textarea id="nextNotes"></textarea></div>
+      <button id="saveNext">Save session plan</button><span id="nextSaved" class="help"></span>
+    </div>
+    <div class="card"><h3>Practice efficiency reminders</h3><ul><li>Start slowly enough to play accurately.</li><li>Work in short focused blocks with a clear goal.</li><li>Isolate the difficult measure or movement, then reconnect it to the whole piece.</li><li>Take brief breaks and finish by playing something you enjoy.</li><li>Record a short sample occasionally so progress is audible.</li></ul></div>
+  </section>
+  <section class="panel" id="progress">
+    <div class="card"><h2>Course progress</h2><div class="statgrid" id="stats"></div><h3 style="margin-top:18px">Class overview</h3><div id="progressClasses"></div></div>
+    <div class="card"><h3>Practice history</h3><div id="history"></div></div>
+  </section>
+  <input id="fileInput" type="file" accept=".json,application/json" aria-label="Open course JSON" style="position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0">
+
+<div id="itemModal" class="mcb-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="itemModalTitle">
+ <div class="mcb-dialog">
+  <div class="row"><h2 id="itemModalTitle" class="grow">Add Practice Item</h2><button class="secondary" id="itemModalX" type="button">✕</button></div>
+  <div class="field"><label for="itemEditName">Practice item name</label><input id="itemEditName" placeholder="e.g. Crosspicking exercise"></div>
+  <div class="grid"><div class="field"><label for="itemEditType">Type</label><select id="itemEditType"><option>Exercise</option><option>Tune</option><option>Technique</option><option>Lesson</option><option>Resource</option></select></div><div class="field"><label for="itemEditMinutes">Minutes</label><input id="itemEditMinutes" type="number" min="1" value="10"></div></div>
+  <div class="field"><label for="itemEditUrl">YouTube or webpage URL (optional)</label><input id="itemEditUrl" placeholder="https://youtube.com/..."></div>
+  <h3>Attach resources</h3>
+  <div class="row" style="flex-wrap:wrap;gap:8px"><button type="button" class="secondary" id="itemLibraryBtn">Resource Library</button><button type="button" class="secondary" id="itemLocalBtn">Import File</button></div>
+  <input type="file" id="itemLocalInput" hidden multiple accept=".pdf,audio/*,video/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.mp4,.webm,.mov,.m4v">
+  <div id="itemLibraryChooser" hidden class="mcb-library-chooser"><b>Choose existing resources</b><p class="help">Select any resources already imported. They will be linked, not copied.</p><div id="itemLibraryOptions"></div><button type="button" id="itemLibraryAttach">Attach selected</button></div>
+  <div id="itemAttached" class="mcb-attached"></div>
+  <p id="itemModalMessage" class="help" role="status"></p>
+  <div class="row" style="justify-content:flex-end"><button class="secondary" type="button" id="itemModalCancel">Cancel</button><button type="button" id="itemModalSave">Save Practice Item</button></div>
+ </div>
+</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const blankCourse=()=>({schemaVersion:4,id:'course-'+Date.now(),name:'My Music Course',instrument:'',level:'Beginner',dailyTarget:60,goals:'',classes:[],history:[],next:{focus:'',goal:'',notes:''},resources:[]});
+let course=blankCourse(), fileHandle=null, dirty=false, secondsLeft=0, timerId=null, timerRunning=false;
+const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setStatus(msg,ok=false){$('saveStatus').innerHTML=ok?'<strong>'+escapeHTML(msg)+'</strong>':escapeHTML(msg)}
+function markDirty(){dirty=true;try{localStorage.setItem('musicCourseBuilder_v4_autosave',JSON.stringify(course))}catch(e){}if(window.MCBCloud?.active()){window.MCBCloud.changed();setStatus('Cloud changes pending…')}else scheduleAutoSave()}
+function syncFields(){course.name=$('courseName').value;course.instrument=$('instrument').value;course.level=$('level').value;course.dailyTarget=Math.max(1,Number($('dailyTarget').value)||60);course.goals=$('goals').value}
+function fillFields(){$('courseName').value=course.name||'';$('instrument').value=course.instrument||'';$('level').value=course.level||'Beginner';$('dailyTarget').value=course.dailyTarget||60;$('goals').value=course.goals||'';$('nextFocus').value=course.next?.focus||'';$('nextGoal').value=course.next?.goal||'';$('nextNotes').value=course.next?.notes||'';render()}
+function filename(){return ((course.name||'music-course').trim().replace(/[^a-z0-9-_]+/gi,'-').replace(/^-|-$/g,'')||'music-course')+'.json'}
+function downloadJSON(data,name){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)}
+const DB='music-builder-v4',STORE='files';
+async function dbGet(){return new Promise((resolve)=>{try{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onerror=()=>resolve(null);r.onsuccess=()=>{const db=r.result,q=db.transaction(STORE).objectStore(STORE).get('active');q.onsuccess=()=>{resolve(q.result||null);db.close()};q.onerror=()=>{resolve(null);db.close()}}}catch(e){resolve(null)}})}
+async function dbSet(handle){return new Promise(resolve=>{try{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE);r.onerror=()=>resolve();r.onsuccess=()=>{const db=r.result,t=db.transaction(STORE,'readwrite');if(handle)t.objectStore(STORE).put(handle,'active');else t.objectStore(STORE).delete('active');t.oncomplete=()=>{db.close();resolve()};t.onerror=()=>{db.close();resolve()}}}catch(e){resolve()}})}
+function payload(){syncFields();return {...course,schemaVersion:4,savedAt:new Date().toISOString()}}
+async function permission(handle,ask=false){try{let p=await handle.queryPermission({mode:'readwrite'});if(p!=='granted'&&ask)p=await handle.requestPermission({mode:'readwrite'});return p==='granted'}catch(e){return false}}
+async function writeLinked(ask=false){if(!fileHandle||!await permission(fileHandle,ask))return false;const w=await fileHandle.createWritable();await w.write(JSON.stringify(payload(),null,2));await w.close();return true}
+let saveSequence=0,autoTimer=null;
+function scheduleAutoSave(){if(window.MCBCloud?.active())return;clearTimeout(autoTimer);const sequence=++saveSequence;if(!fileHandle){setStatus('Browser backup only — use Save As to link a course');return}setStatus('Changes pending…');autoTimer=setTimeout(async()=>{try{if(await writeLinked(false)){if(sequence===saveSequence){dirty=false;setStatus('Autosaved to '+fileHandle.name,true)}}else{$('reconnectBtn').hidden=false;setStatus('Reconnect file to enable autosave')}}catch(e){setStatus('Autosave failed: '+e.message);$('reconnectBtn').hidden=false}},1000)}
+async function saveCourse(){if(window.MCBCloud?.active()){await window.MCBCloud.save();return}clearTimeout(autoTimer);try{if(fileHandle){if(await writeLinked(true)){dirty=false;setStatus('Saved to '+fileHandle.name,true);$('reconnectBtn').hidden=true;return}setStatus('Permission required — reconnect the file');$('reconnectBtn').hidden=false;return}downloadJSON(payload(),filename());dirty=false;setStatus('Downloaded course JSON — use Save As to link',true)}catch(e){alert('Save failed: '+e.message);setStatus('Save failed')}}
+function askCourseFilename(){
+ const typed=prompt('Save course as (filename):',filename().replace(/\.json$/i,''));
+ if(typed===null)return null;
+ const clean=typed.trim().replace(/\.json$/i,'').replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').trim();
+ if(!clean){alert('Please enter a filename.');return null}
+ return clean+'.json';
+}
+const supportsLinkedFiles=()=>typeof window.showSaveFilePicker==='function' && typeof window.showOpenFilePicker==='function';
+async function saveAs(){
+ clearTimeout(autoTimer);
+ const name=askCourseFilename();if(!name)return;
+ syncFields();
+ const data=payload();
+ if(supportsLinkedFiles()){
+  try{
+   const handle=await window.showSaveFilePicker({suggestedName:name,types:[{description:'Music course JSON',accept:{'application/json':['.json']}}]});
+   const w=await handle.createWritable();await w.write(JSON.stringify(data,null,2));await w.close();
+   fileHandle=handle;await dbSet(handle);dirty=false;$('reconnectBtn').hidden=true;
+   setStatus('Saved as '+handle.name+' · autosave on',true);return;
+  }catch(e){if(e.name==='AbortError')return;console.warn(e)}
+ }
+ // On iOS, sharing a File offers a named document to Save to Files / Drive.
+ // Keep navigator.share inside the direct Save As interaction, before awaits.
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const namedFile=new File([blob],name,{type:'application/json'});
+ if(navigator.canShare?.({files:[namedFile]}) && navigator.share){
+  try{
+   await navigator.share({files:[namedFile]});
+   fileHandle=null;await dbSet(null);dirty=false;
+   setStatus('Shared '+name+' — confirm its destination in Files',true);return;
+  }catch(e){if(e.name==='AbortError')return;console.warn('Share failed',e)}
+ }
+ downloadJSON(data,name);fileHandle=null;await dbSet(null);dirty=false;
+ setStatus('Downloaded '+name+' — find it in Downloads',true);
+}
+async function openCourse(){
+ // Invoke the file picker immediately on user tap. Confirm AFTER file selection.
+ // Native confirm before input.click() can prevent iOS from opening the picker.
+ if(supportsLinkedFiles()){
+  try{
+   const [handle]=await window.showOpenFilePicker({types:[{description:'Music course JSON',accept:{'application/json':['.json']}}]});
+   if(dirty&&!confirm('Discard unsaved changes and open the selected course?'))return;
+   const f=await handle.getFile(),data=JSON.parse(await f.text());
+   loadCourse(data);fileHandle=handle;await dbSet(handle);dirty=false;
+   $('reconnectBtn').hidden=true;setStatus('Opened '+handle.name+' · autosave on',true);return;
+  }catch(e){if(e.name==='AbortError')return;alert('Could not open: '+e.message);return}
+ }
+ const input=$('fileInput');input.value='';input.click();
+ setStatus('Choose a saved course JSON file from Files',false);
+}
+async function reconnect(){if(!fileHandle)fileHandle=await dbGet();if(!fileHandle){setStatus('No remembered file — use Open Course');return}try{if(!await permission(fileHandle,true)){setStatus('File access not granted');return}const f=await fileHandle.getFile(),data=JSON.parse(await f.text());if(dirty&&!confirm('Reload linked file? Unsaved browser changes will be replaced.'))return;loadCourse(data);dirty=false;$('reconnectBtn').hidden=true;setStatus('Reconnected to '+fileHandle.name+' · autosave on',true)}catch(e){setStatus('Reconnect failed — use Open Course')}}
+function loadCourse(data){if(!data||!Array.isArray(data.classes))throw new Error('That file does not look like a Music Course Builder course.');course={...blankCourse(),...data,classes:data.classes,history:Array.isArray(data.history)?data.history:[],next:data.next||{focus:'',goal:'',notes:''},resources:Array.isArray(data.resources)?data.resources:[]};fillFields();dirty=false;try{localStorage.setItem('musicCourseBuilder_v3_autosave',JSON.stringify(course))}catch(e){}}
+function addClass(){const name=prompt('Class name (for example, Tremolo Development):');if(!name?.trim())return;course.classes.push({id:'cl-'+Date.now(),name:name.trim(),description:'',difficulty:'Introduction',prerequisite:'',minutes:30,items:[]});markDirty();render()}
+function editClass(id){const c=course.classes.find(x=>x.id===id);if(!c)return;const name=prompt('Class name:',c.name);if(name===null)return;const desc=prompt('Class description:',c.description||'');if(desc===null)return;const minutes=prompt('Class practice time (minutes):',c.minutes||30);if(minutes===null)return;c.name=name.trim()||c.name;c.description=desc;c.minutes=Math.max(1,Number(minutes)||30);markDirty();render()}
+let itemEditor=null;
+function openItemEditor(cid,iid=null){
+ const c=course.classes.find(x=>x.id===cid);if(!c)return;
+ let item=iid?c.items.find(x=>x.id===iid):null;
+ const isNew=!item;
+ if(!item){item={id:'it-'+Date.now()+'-'+Math.random().toString(36).slice(2),name:'',type:'Exercise',minutes:10,url:'',notes:'',linkedResourceIds:[]};c.items.push(item)}
+ itemEditor={cid,iid:item.id,isNew,original:isNew?null:JSON.parse(JSON.stringify(item)),originalResourceIds:new Set((course.resources||[]).filter(r=>r.scope==='item:'+item.id).map(r=>r.id))};
+ $('itemModalTitle').textContent=isNew?'Add Practice Item':'Edit Practice Item';
+ $('itemEditName').value=item.name;$('itemEditType').value=item.type||'Exercise';$('itemEditMinutes').value=item.minutes||10;$('itemEditUrl').value=item.url||'';
+ $('itemLibraryChooser').hidden=true;$('itemModalMessage').textContent='';
+ $('itemModal').hidden=false;renderItemAttachments();$('itemEditName').focus();
+}
+function currentEditItem(){return itemEditor&&course.classes.find(c=>c.id===itemEditor.cid)?.items.find(i=>i.id===itemEditor.iid)}
+function renderItemAttachments(){const item=currentEditItem();if(!item)return;const owned=(course.resources||[]).filter(r=>r.scope==='item:'+item.id);const links=(item.linkedResourceIds||[]).map(id=>(course.resources||[]).find(r=>r.id===id)).filter(Boolean);const unique=[...new Map([...owned,...links].map(r=>[r.id,r])).values()];$('itemAttached').innerHTML='<b>Attached resources ('+unique.length+')</b>'+ (unique.length?unique.map(r=>'<div class="mcb-resource-line"><span>'+escapeHTML(mediaDisplayName(r.name))+' <small>('+escapeHTML(r.kind)+')</small></span><button class="secondary" type="button" onclick="unlinkItemResource('+JSON.stringify(r.id)+')">Detach</button></div>').join(''):'<p class="help">No resources attached yet.</p>')}
+function unlinkItemResource(id){const it=currentEditItem();if(!it)return;it.linkedResourceIds=(it.linkedResourceIds||[]).filter(x=>x!==id);const r=(course.resources||[]).find(x=>x.id===id);if(r?.scope==='item:'+it.id){r.scope='course'}renderItemAttachments();markDirty();renderResources();renderPracticeResources()}
+function renderLibraryChoices(){const it=currentEditItem();if(!it)return;const list=(course.resources||[]).filter(r=>r.scope!=='item:'+it.id);$('itemLibraryOptions').innerHTML=list.length?list.map(r=>'<label><input type="checkbox" class="item-lib-choice" value="'+escapeHTML(r.id)+'"> '+escapeHTML(mediaDisplayName(r.name))+' <small>('+escapeHTML(r.kind)+')</small></label>').join(''):'<p class="help">No existing resources yet. Import a file first.</p>'}
+async function cancelItemEditor(){const e=itemEditor;if(!e)return;const c=course.classes.find(x=>x.id===e.cid),it=c?.items.find(x=>x.id===e.iid);if(e.isNew){c.items=c.items.filter(x=>x.id!==e.iid)}else if(it){Object.keys(it).forEach(k=>delete it[k]);Object.assign(it,e.original)}const fresh=(course.resources||[]).filter(r=>r.scope==='item:'+e.iid&&!e.originalResourceIds.has(r.id));for(const r of fresh){course.resources=course.resources.filter(x=>x.id!==r.id);try{await mediaDelete(r.id)}catch(err){console.warn(err)}}itemEditor=null;$('itemModal').hidden=true;markDirty();render()}
+function saveItemEditor(){const it=currentEditItem();if(!it)return;const name=$('itemEditName').value.trim();if(!name){$('itemModalMessage').textContent='Please enter a practice item name.';return}it.name=name;it.type=$('itemEditType').value;it.minutes=Math.max(1,Number($('itemEditMinutes').value)||10);it.url=$('itemEditUrl').value.trim();if(it.youtubeTitleUrl!==it.url){delete it.youtubeTitle;delete it.youtubeTitleUrl}itemEditor=null;$('itemModal').hidden=true;markDirty();render()}
+function addItem(cid){openItemEditor(cid)}
+function editItem(cid,iid){openItemEditor(cid,iid)}
+$('itemModalX').onclick=cancelItemEditor;$('itemModalCancel').onclick=cancelItemEditor;$('itemModalSave').onclick=saveItemEditor;
+$('itemLocalBtn').onclick=()=>$('itemLocalInput').click();
+$('itemLocalInput').onchange=async()=>{const it=currentEditItem();if(!it)return;await attachFiles($('itemLocalInput').files,'item:'+it.id,'itemModalMessage');$('itemLocalInput').value='';renderItemAttachments()};
+
+$('itemLibraryBtn').onclick=()=>{$('itemLibraryChooser').hidden=!$('itemLibraryChooser').hidden;if(!$('itemLibraryChooser').hidden)renderLibraryChoices()};
+$('itemLibraryAttach').onclick=()=>{const it=currentEditItem();if(!it)return;const chosen=[...document.querySelectorAll('.item-lib-choice:checked')].map(x=>x.value);it.linkedResourceIds=[...new Set([...(it.linkedResourceIds||[]),...chosen])];$('itemLibraryChooser').hidden=true;markDirty();renderItemAttachments();renderPracticeResources()};
+function render(){renderClasses();renderSelectors();renderLibrary();renderProgress();renderResources();renderPracticeResources()}
+
+const MEDIA_DB='music-course-media-v5', MEDIA_STORE='blobs';
+function mediaDB(){return new Promise((resolve,reject)=>{const q=indexedDB.open(MEDIA_DB,1);q.onupgradeneeded=()=>q.result.createObjectStore(MEDIA_STORE);q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)})}
+async function mediaPut(key,file){const db=await mediaDB();try{await new Promise((res,rej)=>{const tx=db.transaction(MEDIA_STORE,'readwrite');tx.objectStore(MEDIA_STORE).put(file,key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}finally{db.close()}}
+async function mediaGet(key){const db=await mediaDB();try{return await new Promise((res,rej)=>{const q=db.transaction(MEDIA_STORE).objectStore(MEDIA_STORE).get(key);q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error)})}finally{db.close()}}
+async function mediaDelete(key){const db=await mediaDB();try{await new Promise((res,rej)=>{const tx=db.transaction(MEDIA_STORE,'readwrite');tx.objectStore(MEDIA_STORE).delete(key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}finally{db.close()}}
+function mediaDisplayName(name){return String(name||'').replace(/\.(mp3|wav|m4a|ogg|flac|aac|mp4|webm|mov|m4v|pdf)$/i,'')}
+function resourceType(file){const t=file.type||'',n=file.name.toLowerCase();if(t==='application/pdf'||n.endsWith('.pdf'))return 'pdf';if(t.startsWith('audio/')||/\.(mp3|wav|m4a|ogg|flac|aac)$/.test(n))return 'audio';if(t.startsWith('video/')||/\.(mp4|webm|mov|m4v)$/.test(n))return 'video';return null}
+function scopeOptions(){let html='<option value="course">Entire course</option>';for(const c of course.classes){html+=`<option value="class:${escapeHTML(c.id)}">Class: ${escapeHTML(c.name)}</option>`;for(const it of c.items||[])html+=`<option value="item:${escapeHTML(it.id)}">Item: ${escapeHTML(c.name)} / ${escapeHTML(it.name)}</option>`}return html}
+function scopeLabel(scope){if(scope==='course')return 'Entire course';const [type,id]=scope.split(':');for(const c of course.classes){if(type==='class'&&c.id===id)return 'Class: '+c.name;if(type==='item'){const it=c.items?.find(x=>x.id===id);if(it)return 'Item: '+c.name+' / '+it.name}}return 'Unlinked'}
+function attachToClass(id){switchTab('resources');$('resourceScope').value='class:'+id;$('resourceFiles').click()}
+function attachToItem(cid,id){switchTab('resources');$('resourceScope').value='item:'+id;$('resourceFiles').click()}
+function renderResources(){const select=$('resourceScope');if(!select)return;const selected=select.value;select.innerHTML=scopeOptions();if([...select.options].some(x=>x.value===selected))select.value=selected;const items=course.resources||[];$('resourceList').innerHTML=items.length?items.map(r=>`<div class="item" oncontextmenu="openResourceContext(event,'${r.id}')" title="Right-click to open in a new tab"><div><b>${escapeHTML(mediaDisplayName(r.name))}</b> <span class="pill">${escapeHTML(r.kind.toUpperCase())}</span><br><small>${escapeHTML(scopeLabel(r.scope))} · ${(r.size/1048576).toFixed(1)} MB · browser storage</small></div><div class="item-actions"><button class="secondary" onclick="relinkResource('${r.id}')">Relink File</button><button onclick="previewResource('${r.id}')">${r.kind==='pdf'?'Open PDF':'Open / Play'}</button><button class="danger" onclick="removeResource('${r.id}')">Remove</button></div></div>`).join(''):'<div class="empty">No resources attached. Files imported on another device need to be relinked locally.</div>'}
+
+async function relinkResource(id, onSuccess){
+ const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;
+ const picker=document.createElement('input');picker.type='file';picker.accept=r.kind==='pdf'?'.pdf,application/pdf':r.kind==='audio'?'audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac':'video/*,.mp4,.webm,.mov,.m4v';
+ picker.onchange=async()=>{
+  const file=picker.files?.[0];if(!file)return;
+  const kind=resourceType(file);
+  if(kind!==r.kind){alert('Please choose a '+r.kind+' file for this resource.');return}
+  if(file.name!==r.name&&!confirm('This file is named "'+file.name+'" but the linked resource is "'+r.name+'". Use it anyway?'))return;
+  try{await mediaPut(id,file);$('resourceMessage').textContent='File relinked on this device: '+r.name+'. You can now open/play it. The file itself is not uploaded to Firebase.';renderResources();renderPracticeResources();if(typeof onSuccess==='function')onSuccess();}
+  catch(e){alert('Could not relink file: '+e.message)}
+ };
+ picker.click();
+}
+// V55.7.9: Missing-media assistance; iOS Files/Google Drive search is OS-controlled.
+async function copyMissingFilename(name, feedback){
+ try{await navigator.clipboard.writeText(name);if(feedback)feedback.textContent='Filename copied. Paste it into the Files / Google Drive search bar.';return true}
+ catch(e){if(feedback)feedback.textContent='Clipboard unavailable. Select and copy the filename above.';return false}
+}
+function offerMissingMediaRelink(id, onSuccess){
+ const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;
+ document.getElementById('mcbMissingMediaDialog')?.remove();
+ const overlay=document.createElement('div');overlay.id='mcbMissingMediaDialog';
+ overlay.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#091626a8;display:flex;align-items:center;justify-content:center;padding:16px';
+ const panel=document.createElement('div');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','Media file unavailable');
+ panel.style.cssText='background:white;color:#203047;width:min(520px,100%);padding:20px;border-radius:12px;box-shadow:0 10px 40px #0006';
+ const title=document.createElement('h3');title.textContent='Media file unavailable';
+ const desc=document.createElement('p');desc.textContent='This course references a file that is not available on this device. Search for the filename in Google Drive or iCloud Drive, then select the matching file.';
+ const label=document.createElement('label');label.textContent='Missing filename';
+ const name=document.createElement('input');name.type='text';name.readOnly=true;name.value=r.name;name.style.cssText='width:100%;margin:6px 0 12px';name.onclick=()=>name.select();
+ const msg=document.createElement('p');msg.style.cssText='font-size:13px;color:#52677b;min-height:20px';msg.textContent='On iPhone/iPad, the system file picker search cannot be filled automatically.';
+ const buttons=document.createElement('div');buttons.style.cssText='display:flex;gap:8px;flex-wrap:wrap';
+ const copy=document.createElement('button');copy.textContent='Copy Filename';copy.className='secondary';copy.onclick=()=>copyMissingFilename(r.name,msg);
+ const relink=document.createElement('button');relink.textContent='Relink This File';relink.onclick=()=>{overlay.remove();relinkResource(id,onSuccess)};
+ const both=document.createElement('button');both.textContent='Copy Filename & Relink';both.onclick=()=>{ // keep the file picker directly tied to the user gesture
+   navigator.clipboard?.writeText(r.name).catch(()=>{});overlay.remove();relinkResource(id,onSuccess);
+ };
+ const cancel=document.createElement('button');cancel.className='secondary';cancel.textContent='Not Now';cancel.onclick=()=>overlay.remove();
+ buttons.append(copy,relink,both,cancel);panel.append(title,desc,label,name,msg,buttons);overlay.append(panel);document.body.append(overlay);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove()});
+}
+// V55.6: Device-local folder access; course metadata stays in Firebase.
+const MEDIA_FOLDER_DB='mcb-media-folder-v556',MEDIA_FOLDER_KEY='designated-folder';
+function mediaFolderDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(MEDIA_FOLDER_DB,1);req.onupgradeneeded=()=>req.result.createObjectStore('settings');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+async function mediaFolderSave(handle){const db=await mediaFolderDB();try{await new Promise((resolve,reject)=>{const tx=db.transaction('settings','readwrite');tx.objectStore('settings').put(handle,MEDIA_FOLDER_KEY);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}finally{db.close()}}
+async function mediaFolderLoad(){const db=await mediaFolderDB();try{return await new Promise((resolve,reject)=>{const q=db.transaction('settings').objectStore('settings').get(MEDIA_FOLDER_KEY);q.onsuccess=()=>resolve(q.result||null);q.onerror=()=>reject(q.error)})}finally{db.close()}}
+function mediaFolderMessage(message){$('mediaFolderStatus').textContent=message}
+async function smartRelink(files){
+ const resources=course.resources||[],byName=new Map();
+ for(const r of resources){const k=r.name.toLowerCase();if(!byName.has(k))byName.set(k,[]);byName.get(k).push(r)}
+ const byFile=new Map();for(const file of files){const key=file.name.toLowerCase();if(!byFile.has(key))byFile.set(key,[]);byFile.get(key).push(file)}
+ let matched=0,missing=0,ambiguous=0,failed=0;
+ for(const [name,rs] of byName){const candidates=byFile.get(name)||[];
+  if(!candidates.length){missing+=rs.length;continue}
+  if(candidates.length!==1||candidates.some(f=>resourceType(f)!==rs[0].kind)||rs.some(r=>r.kind!==rs[0].kind)){ambiguous+=rs.length;continue}
+  for(const r of rs){try{await mediaPut(r.id,candidates[0]);matched++}catch(e){failed++;console.error('Smart relink failed',r.name,e)}}
+ }
+ renderResources();renderPracticeResources();if(typeof renderClasses==='function')renderClasses();
+ const summary=`Current course: ${matched} linked, ${missing} missing, ${ambiguous} ambiguous, ${failed} failed. ${files.length} file(s) selected. Links are stored on this device.`;
+ mediaFolderMessage(summary);$('resourceMessage').textContent=summary;return {matched,missing,ambiguous,failed};
+}
+async function smartFolderFiles(handle){const files=[];for await(const entry of handle.values()){if(entry.kind==='file'){try{files.push(await entry.getFile())}catch(e){console.warn('Cannot read file',entry.name,e)}}}return files}
+$('mediaChooseFiles').onclick=()=>$('mediaBulkFiles').click();
+$('mediaBulkFiles').onchange=async()=>{const files=[...$('mediaBulkFiles').files];$('mediaBulkFiles').value='';if(files.length){mediaFolderMessage('Matching selected files…');await smartRelink(files)}};
+$('mediaChooseFolder').onclick=async()=>{
+ if(typeof window.showDirectoryPicker!=='function'){mediaFolderMessage('Folder access is unavailable in this browser. Use Relink All — Select Files, then select multiple files from iCloud Drive or Google Drive.');return}
+ try{const handle=await window.showDirectoryPicker({mode:'read'});await mediaFolderSave(handle);mediaFolderMessage('Designated '+handle.name+' on this device. Matching files…');await smartRelink(await smartFolderFiles(handle))}
+ catch(e){if(e.name!=='AbortError'){console.error(e);mediaFolderMessage('Folder access failed: '+e.message)}}
+};
+$('mediaRetryFolder').onclick=async()=>{
+ try{const handle=await mediaFolderLoad();if(!handle){mediaFolderMessage('No remembered folder. Choose Designate Media Folder or Select Files.');return}
+  const state=await handle.queryPermission({mode:'read'});if(state!=='granted'){const permission=await handle.requestPermission({mode:'read'});if(permission!=='granted'){mediaFolderMessage('Folder permission not granted.');return}}
+  mediaFolderMessage('Matching files from '+handle.name+'…');await smartRelink(await smartFolderFiles(handle))
+ }catch(e){console.error(e);mediaFolderMessage('Could not reopen folder: '+e.message+' — select it again.')}};
+mediaFolderLoad().then(h=>{if(h)mediaFolderMessage('Remembered folder: '+h.name+'. Use Relink from Remembered Folder after opening a course.')}).catch(()=>{});
+
+async function attachFiles(files,scope,messageId){let added=0,errors=[];for(const file of [...files]){const kind=resourceType(file);if(!kind){errors.push('Unsupported: '+file.name);continue}const id='media-'+Date.now()+'-'+Math.random().toString(36).slice(2);try{await mediaPut(id,file);course.resources=course.resources||[];course.resources.push({id,name:file.name,kind,type:file.type,size:file.size,scope});added++}catch(e){errors.push(file.name+': '+e.message)}}if(added){markDirty();renderResources();renderPracticeResources();renderClasses()}$(messageId).textContent=(added?added+' resource(s) attached. ':'')+errors.join(' | ');return added}
+$('addResourceBtn').onclick=async()=>{await attachFiles($('resourceFiles').files,$('resourceScope').value,'resourceMessage');$('resourceFiles').value=''};
+function practiceScope(){return selectedItem()?'item:'+selectedItem().id:selectedClass()?'class:'+selectedClass().id:'course'}
+$('practiceAttach').onclick=()=>$('practiceFileInput').click();
+$('practiceFileInput').onchange=async()=>{await attachFiles($('practiceFileInput').files,practiceScope(),'practiceResourceMessage');$('practiceFileInput').value=''};
+function bindDropzone(id,inputId,handler){const zone=$(id);zone.onclick=()=>$(inputId).click();zone.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$(inputId).click()}};zone.ondragover=e=>{e.preventDefault();zone.classList.add('dragover')};zone.ondragleave=e=>{e.preventDefault();zone.classList.remove('dragover')};zone.ondrop=async e=>{e.preventDefault();zone.classList.remove('dragover');await handler(e.dataTransfer.files)}}
+bindDropzone('libraryDrop','resourceFiles',files=>attachFiles(files,$('resourceScope').value,'resourceMessage'));
+bindDropzone('practiceDrop','practiceFileInput',files=>attachFiles(files,practiceScope(),'practiceResourceMessage'));
+// YouTube display titles: URLs remain stored for playback, never used as labels.
+const youtubeTitlePending=new Set();
+function compactYoutubeTitle(title){return title.length>25?title.slice(0,25).trimEnd()+'…':title}
+function youtubeVideoId(raw){try{const u=new URL(raw);let id=null;if(['youtu.be','www.youtu.be'].includes(u.hostname))id=u.pathname.split('/')[1];else if(['youtube.com','www.youtube.com','m.youtube.com','www.youtube-nocookie.com'].includes(u.hostname))id=u.searchParams.get('v')||u.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1];return id&&/^[\w-]{11}$/.test(id)?id:null}catch{return null}}
+function itemLinkLabel(it){if(!youtubeVideoId(it?.url||''))return it?.url||'';if(it.youtubeTitleUrl===it.url&&it.youtubeTitle)return it.youtubeTitle;requestYoutubeTitle(it);return 'YouTube video (title loading…)'}
+function requestYoutubeTitle(it){const url=it?.url||'',id=youtubeVideoId(url);if(!id||youtubeTitlePending.has(id)||it.youtubeTitleUrl===url&&it.youtubeTitle)return;youtubeTitlePending.add(id);
+ fetch('https://noembed.com/embed?url='+encodeURIComponent('https://www.youtube.com/watch?v='+id)).then(r=>{if(!r.ok)throw Error('Metadata unavailable');return r.json()}).then(data=>{const title=typeof data.title==='string'?data.title.trim():'';if(!title||it.url!==url)return;it.youtubeTitle=title;it.youtubeTitleUrl=url;markDirty();renderClasses();renderLibrary();renderPracticeResources()}).catch(()=>{if(it.url===url){it.youtubeTitle='YouTube video';it.youtubeTitleUrl=url;renderClasses();renderLibrary();renderPracticeResources()}}).finally(()=>youtubeTitlePending.delete(id));}
+function youtubeLinkLabelHTML(it){const title=itemLinkLabel(it);return youtubeVideoId(it?.url||'')?'<span title="'+escapeHTML(title)+'">'+escapeHTML(compactYoutubeTitle(title))+'</span>':escapeHTML(title)}
+function renderPracticeResources(){const host=$('practiceResources');if(!host)return;const c=selectedClass(),it=selectedItem(),allowed=new Set(['course']);if(c)allowed.add('class:'+c.id);if(it)allowed.add('item:'+it.id);const resources=(course.resources||[]).filter(r=>allowed.has(r.scope)||(it?.linkedResourceIds||[]).includes(r.id));const linked=it?.url?.trim()?`<div class="item"><div><b>${youtubeVideoId(it.url)?youtubeLinkLabelHTML(it):escapeHTML(it.name)}</b></div><div class="item-actions">${youtubeVideoId(it.url)?`<button class="mcb-youtube-btn" onclick="openYoutubeCompanion()">▶ YouTube Player</button>`:`<button class="mcb-link-btn" onclick="openPracticeLink()">Open Link</button><button class="secondary" onclick="importPracticeLinkMedia()">Import to Media Player</button><button class="danger" onclick="removePracticeLink()">Remove Link</button>`}</div></div>`:'';
+host.innerHTML=(resources.length?resources.map(r=>`<div class="item" oncontextmenu="openResourceContext(event,'${r.id}')" title="Right-click to open in a new tab"><div><b>${escapeHTML(mediaDisplayName(r.name))}</b> <span class="pill">${escapeHTML(r.kind)}</span><br><small>${escapeHTML(scopeLabel(r.scope))}</small></div><div class="item-actions"><button class="secondary" onclick="relinkResource('${r.id}')">Relink File</button><button onclick="previewResource('${r.id}',true)">${r.kind==='pdf'?'Open PDF':'Open / Play'}</button><button class="danger" onclick="removeResourceFromPractice('${r.id}')">Remove</button></div></div>`).join('') :'')+linked||'<p class="help">No resources assigned yet. Attach a file here or use the Local Resources tab.</p>'}
+function removePracticeLink(){
+ const it=selectedItem();if(!it?.url)return;
+ if(!confirm('Remove the link from this practice item? Imported media files and other attachments will remain.'))return;
+ it.url='';markDirty();renderClasses();renderLibrary();renderPracticeResources();
+}
+function importPracticeLinkMedia(){
+ const item=selectedItem();
+ if(!item){alert('Select a practice item first.');return}
+ const picker=document.createElement('input');
+ picker.type='file';
+ picker.accept='audio/*,video/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.mp4,.webm,.mov,.m4v';
+ picker.style.display='none';
+ document.body.append(picker);
+ picker.onchange=async()=>{
+  const file=picker.files?.[0];picker.remove();
+  if(!file)return;
+  const kind=resourceType(file);
+  if(kind!=='audio'&&kind!=='video'){alert('Choose an audio or video file downloaded from Google Drive.');return}
+  const id='media-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+  try{
+   await mediaPut(id,file);
+   course.resources=course.resources||[];
+   course.resources.push({id,name:file.name,kind,type:file.type,size:file.size,scope:'item:'+item.id,sourceUrl:item.url||''});
+   markDirty();renderResources();renderPracticeResources();renderClasses();
+   await previewResource(id,true);
+  }catch(e){alert('Could not import media: '+e.message)}
+ };
+ picker.oncancel=()=>picker.remove();
+ picker.click();
+}
+function openPracticeLink(){
+ const it=selectedItem(),url=it?.url?.trim();
+ if(!url)return;
+ let parsed;try{parsed=new URL(url)}catch{alert('This practice item has an invalid link.');return}
+ if(!['https:','http:'].includes(parsed.protocol)){alert('Only web links can be opened.');return}
+ const m=parsed.hostname==='drive.google.com'?parsed.pathname.match(/\/file\/d\/([A-Za-z0-9_-]+)/):null;
+ const id=m?.[1]|| (parsed.hostname==='drive.google.com'?parsed.searchParams.get('id'):null);
+ if(id){
+  const host=$('practiceMediaPreview');closeMedia();
+  host.innerHTML='';
+  const box=document.createElement('div');box.className='drive-embedded';
+  const heading=document.createElement('div');heading.className='row';
+  const label=document.createElement('strong');label.textContent=it.name;
+  const close=document.createElement('button');close.className='secondary';close.textContent='Close';close.onclick=()=>box.remove();
+  heading.append(label,close);
+  const frame=document.createElement('iframe');frame.title=it.name;
+  frame.src='https://drive.google.com/file/d/'+encodeURIComponent(id)+'/preview';
+  frame.allow='autoplay; fullscreen; picture-in-picture';
+  frame.style.cssText='display:block;width:100%;height:260px;border:0;border-radius:6px;background:#111';
+  const note=document.createElement('small');note.textContent='Google Drive uses its own playback controls. To use the practice controls, speed and A–B loops, download the media from Google Drive and choose Import to Media Player on the practice item.';
+  box.append(heading,frame,note);host.append(box);host.scrollIntoView({block:'nearest',behavior:'smooth'});
+ }else window.open(parsed.href,'_blank','noopener');
+}
+async function removeResourceFromPractice(id){const it=selectedItem();if(it?.linkedResourceIds?.includes(id)){if(!confirm('Detach this resource from the selected practice item? The library file will be kept.'))return;it.linkedResourceIds=it.linkedResourceIds.filter(x=>x!==id);markDirty();renderPracticeResources();return}const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;const scope=scopeLabel(r.scope);if(!confirm('Remove "'+r.name+'" from '+scope+'?\n\nThis will remove the file from the course resource library and browser storage.'))return;course.resources=course.resources.filter(x=>x.id!==id);try{await mediaDelete(id)}catch(e){console.warn('Media cleanup failed',e)}closePreview();markDirty();renderResources();renderPracticeResources();renderClasses();renderClasses();$('practiceResourceMessage').textContent='Removed '+r.name+'.'}
+let previewURL=null;
+function mediaTime(t){if(!Number.isFinite(t))return '--:--';const m=Math.floor(t/60),sec=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0')}
+function addMediaControls(media,r,host,file){
+ const panel=document.createElement('div');panel.className='media-tools';
+ panel.innerHTML=`
+ <div class="wave-wrap"><canvas class="wave-canvas" id="waveCanvas" height="130" aria-label="Audio waveform and loop markers"></canvas><div class="wave-zoom-controls"><button type="button" class="secondary" id="waveZoomOut" title="Zoom out">− Zoom</button><button type="button" class="secondary" id="waveZoomIn" title="Zoom around playhead">+ Zoom</button><button type="button" class="secondary" id="waveZoomFit" title="Show the entire recording">Fit All</button><span id="waveZoomLabel">100%</span></div><div id="waveInfo" class="wave-help" aria-live="polite">Analyzing waveform… Drag to scrub; hold Shift and drag to select or adjust loop markers.</div></div>
+ <div class="media-control-scroll" aria-label="Media playback controls"><div class="media-control-strip">
+ <button type="button" class="secondary" id="jumpToIn">Jump to In</button>
+ <button type="button" class="secondary" id="jumpToOut">Jump to Out</button>
+ <button type="button" class="secondary" id="toggleLoop">Enable Loop</button>
+ <button type="button" class="mcb-play-emphasis" id="mediaPlayPause">▶ Play</button>
+ <button type="button" class="secondary" id="waveStart">Mark In</button>
+ <button type="button" class="secondary" id="waveEnd">Mark Out</button>
+ <div class="speed-picker"><button type="button" class="secondary" id="speedButton" aria-haspopup="true" aria-expanded="false">Speed: 1× ▾</button><div id="speedMenu" class="speed-menu" hidden role="group" aria-label="Choose playback speed"></div></div>
+ <button type="button" class="secondary" id="nudgeLeft">◀ Nudge</button>
+ <button type="button" class="secondary" id="nudgeRight">Nudge ▶</button>
+ <button type="button" class="secondary" id="jumpBack">◀ −5s</button>
+ <button type="button" class="secondary" id="jumpForward">+5s ▶</button>
+ <button type="button" class="secondary" id="clearLoop">Clear Markers</button>
+ <div class="help-popover-anchor"><button type="button" class="secondary media-help-btn" id="mediaHelp" aria-label="Click for media player help" aria-expanded="false">?</button></div>
+ <output class="media-timecode" id="mediaTimecode" aria-label="Current time and duration">00:00 / --:--</output>
+
+ </div></div>
+ <div id="mediaHelpText" class="media-help-text" role="tooltip" hidden>
+ <b>Media player help</b>
+ <p><b>Play/Pause:</b> Click Play/Pause or press the spacebar when not typing. </p>
+ <p><b>Zoom:</b> Use + Zoom to zoom around the playhead, − Zoom to zoom out, Fit All for the complete recording, and the mouse wheel to scroll horizontally while zoomed. Some video codecs cannot be analyzed directly in Chrome.</p>
+ <p><b>Waveform:</b> Click to seek. Drag across the waveform to scrub. Hold Shift and drag to select a loop, or Shift-drag the blue In or orange Out marker to fine-tune the selection. Alternatively, seek and click Mark In or Mark Out to place a marker at the playhead.</p>
+ <p><b>Enable Loop:</b> Repeat the selected passage. Clear Markers removes the selection. Jump to In/Out seek to their respective markers. Nudge Left/Right move only the playhead by 0.05 seconds without changing markers. The −5s and +5s buttons seek five seconds. Click ? to show or hide these instructions. The Speed dropdown changes playback rate; the browser preserves original pitch where supported.</p>
+ <p><b>Floating and sizing:</b> Use Float Player, then drag its title bar to reposition it. Drag the outer bottom-right corner to resize the player. Drag the labeled horizontal divider between video and waveform to make the video larger or smaller, when the player is floating. You can also focus the divider and press the up/down arrow keys. For video, Float Player opens a separate always-on-top Chrome window that can move between monitors; browser-enforced size limits still apply.</p>
+ <p>The timecode next to Help shows elapsed time / total duration. In floating video, Full Screen is hidden; use Dock Player to return to the normal view before using Full Screen. Speed and loop markers are saved with the resource. Audio floats with compact controls for PDF practice. Video floats in a separate movable, resizable window. V45 restores the original V37 waveform decoder for supported files in Normal Size. Float hides the waveform to keep video practice responsive. Zoom with +/−, Fit All, or scroll the zoomed waveform.</p>
+ </div>`;
+ host.appendChild(panel);
+ // Visual wrappers are outside the existing buttons, so player event handlers and IDs remain unchanged.
+ const approvedLabels={jumpToIn:'Jump In',jumpToOut:'Jump Out',toggleLoop:'Loop',mediaPlayPause:'Play',waveStart:'Mark In',waveEnd:'Mark Out',speedButton:'',nudgeLeft:'Nudge −',nudgeRight:'Nudge +',jumpBack:'−5 sec',jumpForward:'+5 sec',clearLoop:'Clear Markers',mediaHelp:'Help'};
+ for(const [id,label] of Object.entries(approvedLabels)){
+   const btn=panel.querySelector('#'+id);if(!btn)continue;
+   const control=id==='speedButton'?btn.closest('.speed-picker'):id==='mediaHelp'?btn.closest('.help-popover-anchor'):btn;
+   const unit=document.createElement('div');unit.className='mcb-control-unit'+(id==='speedButton'?' mcb-speed-unit':'');
+   control.parentNode.insertBefore(unit,control);unit.append(control);
+   const caption=document.createElement('span');caption.className='mcb-control-label';caption.textContent=label;unit.append(caption);
+ }
+ const compactLabels={mediaPlayPause:'Play or pause',speedButton:'Playback speed',waveStart:'Mark In',waveEnd:'Mark Out',toggleLoop:'Toggle loop',jumpToIn:'Jump to In marker',jumpToOut:'Jump to Out marker',nudgeLeft:'Nudge playback backward 0.05 seconds',nudgeRight:'Nudge playback forward 0.05 seconds',clearLoop:'Clear markers',jumpBack:'Back 5 seconds',jumpForward:'Forward 5 seconds',mediaHelp:'Click for help'};
+ for(const [id,label] of Object.entries(compactLabels)){const button=panel.querySelector('#'+id);if(button){button.title=label;button.setAttribute('aria-label',label)}}
+ const helpBtn=panel.querySelector('#mediaHelp'),helpText=panel.querySelector('#mediaHelpText');
+ function showHelp(){helpText.hidden=false;helpBtn.setAttribute('aria-expanded','true')}
+ function hideHelp(){helpText.hidden=true;helpBtn.setAttribute('aria-expanded','false')}
+ helpBtn.addEventListener('click',()=>helpText.hidden?showHelp():hideHelp());
+ const timecode=panel.querySelector('#mediaTimecode');
+ function updateTimecode(){timecode.textContent=mediaTime(media.currentTime||0)+' / '+mediaTime(media.duration)}
+ media.addEventListener('timeupdate',updateTimecode);media.addEventListener('loadedmetadata',updateTimecode);media.addEventListener('durationchange',updateTimecode);updateTimecode();
+ const q=id=>panel.querySelector('#'+id), saved=r.playback||{},state={a:Number.isFinite(saved.a)?saved.a:null,b:Number.isFinite(saved.b)?saved.b:null,loop:!!saved.loop};
+ let speed=Number(saved.speed)||1;
+ if(![.25,.5,.65,.75,.85,1,1.25,1.5,2].includes(speed))speed=1;
+ const speeds=[.25,.5,.65,.75,.85,1,1.25,1.5,2];
+ const speedButton=q('speedButton'),speedMenu=q('speedMenu');
+ function showSpeed(){speedButton.textContent='Speed: '+speed+'× ▾';speedButton.dataset.speed=speed+'× ▼';speedMenu.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.speed)===speed)))}
+ for(const value of speeds){
+  const option=document.createElement('button');option.type='button';option.className='secondary';option.dataset.speed=value;option.textContent=value+'×';
+  option.onclick=()=>{speed=value;media.playbackRate=speed;setPitchCorrection(true);showSpeed();closeSpeedMenu();save()};
+  speedMenu.append(option);
+ }
+ // Put the menu outside the clipped, horizontally scrolling mini toolbar.
+ // The floating menu is placed in the same document as the player (also works in PiP).
+ function closeSpeedMenu(){speedMenu.hidden=true;speedButton.setAttribute('aria-expanded','false');if(speedMenu.parentNode!==speedButton.parentNode)speedButton.parentNode.append(speedMenu)}
+ function positionSpeedMenu(){
+  const rect=speedButton.getBoundingClientRect();
+  const width=Math.min(250,window.innerWidth-16);
+  speedMenu.style.position='fixed';speedMenu.style.transform='none';speedMenu.style.right='auto';speedMenu.style.bottom='auto';
+  speedMenu.style.width=width+'px';speedMenu.style.left=Math.max(8,Math.min(window.innerWidth-width-8,rect.left))+'px';
+  const h=speedMenu.getBoundingClientRect().height;
+  speedMenu.style.top=(rect.top>=h+8?rect.top-h-5:Math.min(window.innerHeight-h-8,rect.bottom+5))+'px';
+ }
+ speedButton.onclick=()=>{
+  if(!speedMenu.hidden){closeSpeedMenu();return}
+  (speedButton.ownerDocument.fullscreenElement||speedButton.ownerDocument.body).append(speedMenu);speedMenu.hidden=false;positionSpeedMenu();speedButton.setAttribute('aria-expanded','true');
+ };
+ speedMenu.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSpeedMenu();speedButton.focus()}});
+ document.addEventListener('pointerdown',e=>{if(!speedMenu.hidden&&!speedMenu.contains(e.target)&&e.target!==speedButton)closeSpeedMenu()});
+ showSpeed();
+ function setPitchCorrection(on){for(const key of ['preservesPitch','mozPreservesPitch','webkitPreservesPitch']){if(key in media)try{media[key]=on}catch(e){}}}
+ setPitchCorrection(true);
+ media.playbackRate=speed;media.defaultPlaybackRate=speed;
+ function valid(){return state.a!==null&&state.b!==null&&state.b>state.a+.05}
+ function save(){r.playback={a:state.a,b:state.b,loop:state.loop,speed:speed,keepPitch:true};markDirty()}
+ function draw(){q('toggleLoop').textContent=state.loop&&valid()?'Disable Loop':'Enable Loop';q('toggleLoop').setAttribute('aria-pressed',String(state.loop&&valid()));updateWave()}
+ const canvas=q('waveCanvas'),ctx=canvas.getContext('2d');
+ let wavePeaks=null, waveDrag=null, wavePending=false;
+ let zoom=1,viewStart=0;
+ let scrubWasPaused=true, scrubStartedPlayback=false, scrubVideo=false;
+ // Decode-backed grain previews provide audible MP4 scrubbing independently of slow video seeks.
+ let scrubAudioBuffer=null, scrubAudioContext=null, scrubAudioSource=null, scrubAudioLast=0;
+ let scrubAudioWasMuted=false;
+ function stopScrubGrain(){if(scrubAudioSource){try{scrubAudioSource.stop()}catch(e){}scrubAudioSource=null}}
+ function previewScrubAudio(t,force=false){
+  if(!scrubAudioBuffer||!scrubAudioContext)return false;
+  const now=performance.now();if(!force&&now-scrubAudioLast<65)return true;
+  scrubAudioLast=now;
+  try{
+   if(scrubAudioContext.state==='suspended')scrubAudioContext.resume().catch(()=>{});
+   stopScrubGrain();
+   const source=scrubAudioContext.createBufferSource(),gain=scrubAudioContext.createGain();
+   source.buffer=scrubAudioBuffer;
+   // A short grain with a tapered envelope prevents clicks and preserves pitch.
+   const dur=Math.min(.105,Math.max(.015,scrubAudioBuffer.duration-t));
+   if(dur<=.015)return true;
+   const start=scrubAudioContext.currentTime+.005;
+   gain.gain.setValueAtTime(0,start);
+   gain.gain.linearRampToValueAtTime(.85,start+.008);
+   gain.gain.setValueAtTime(.85,start+Math.max(.009,dur-.018));
+   gain.gain.linearRampToValueAtTime(0,start+dur);
+   source.connect(gain);gain.connect(scrubAudioContext.destination);
+   source.start(start,Math.max(0,Math.min(t,scrubAudioBuffer.duration-.016)),dur);
+   source.stop(start+dur+.005);scrubAudioSource=source;
+  }catch(err){console.warn('Audio scrub preview failed',err)}
+  return true;
+ }
+ function finishScrubAudio(){stopScrubGrain();if(scrubVideo&&scrubAudioBuffer)media.muted=scrubAudioWasMuted}
+
+ // Preview seeks are coalesced to the latest cursor position. Keep video playing
+ // during drag so its audio is audible and frames can advance between seeks.
+ let videoScrubPending=null,videoScrubLast=0,videoScrubTimer=null;
+ function flushVideoScrub(force=false){
+  if(videoScrubPending===null)return;
+  const elapsed=performance.now()-videoScrubLast;
+  if(!force&&elapsed<85){
+   if(videoScrubTimer===null)videoScrubTimer=setTimeout(()=>{videoScrubTimer=null;flushVideoScrub()},85-elapsed);
+   return;
+  }
+  const t=videoScrubPending;videoScrubPending=null;videoScrubLast=performance.now();
+  try{media.currentTime=t}catch(err){console.warn('Video seek failed',err)}
+ }
+ function requestVideoScrub(t,force=false){
+  videoScrubPending=t;loopNavigationOverride=true;flushVideoScrub(force);
+ }
+ const visibleDuration=()=>waveDuration()/zoom;
+ function clampView(){viewStart=Math.max(0,Math.min(viewStart,Math.max(0,waveDuration()-visibleDuration())))}
+ function setZoom(next){const d=waveDuration();if(!d)return;const focus=Math.max(viewStart,Math.min(viewStart+visibleDuration(),media.currentTime||0));const ratio=(focus-viewStart)/visibleDuration();zoom=Math.max(1,Math.min(64,next));viewStart=focus-ratio*visibleDuration();clampView();q('waveZoomLabel').textContent=Math.round(zoom*100)+'%';paintWave()}
+ q('waveZoomIn').onclick=()=>setZoom(zoom*2);
+ q('waveZoomOut').onclick=()=>setZoom(zoom/2);
+ q('waveZoomFit').onclick=()=>{zoom=1;viewStart=0;q('waveZoomLabel').textContent='100%';paintWave()};
+ canvas.addEventListener('wheel',e=>{if(zoom<=1)return;e.preventDefault();viewStart+=e.deltaY/600*visibleDuration();clampView();paintWave()},{passive:false});
+ const waveWidth=()=>canvas.getBoundingClientRect().width||640;
+ function waveDuration(){return Number.isFinite(media.duration)&&media.duration>0?media.duration:0}
+ function followPlayhead(){
+  if(zoom<=1||waveDrag)return;
+  const t=media.currentTime||0,span=visibleDuration();
+  // Keep the playhead near the right-hand side while playing; do not scroll while manually scrubbing.
+  if(t>viewStart+span*.85||t<viewStart){viewStart=t-span*.25;clampView()}
+ }
+ function paintWave(){
+  const w=Math.max(300,Math.round(waveWidth()*Math.min(2,window.devicePixelRatio||1))),height=130;
+  if(canvas.width!==w||canvas.height!==height){canvas.width=w;canvas.height=height}
+  ctx.clearRect(0,0,w,height);ctx.fillStyle='#101c2d';ctx.fillRect(0,0,w,height);
+  const d=waveDuration();
+  if(wavePeaks){ctx.fillStyle='#76c5df';for(let x=0;x<w;x++){const v=wavePeaks[Math.min(wavePeaks.length-1,Math.floor((viewStart+(x/w)*visibleDuration())/d*wavePeaks.length))]||0;const amp=Math.max(1,v*57);ctx.fillRect(x,65-amp,1,amp*2)}}
+  else{ctx.strokeStyle='#52677f';ctx.beginPath();ctx.moveTo(0,65);ctx.lineTo(w,65);ctx.stroke();}
+  if(!d)return;
+  const px=t=>(t-viewStart)/visibleDuration()*w;
+  if(valid()){ctx.fillStyle='rgba(100,220,160,.17)';ctx.fillRect(Math.max(0,px(state.a)),0,Math.max(0,Math.min(w,px(state.b))-Math.max(0,px(state.a))),height)}
+  for(const [time,color,label] of [[state.a,'#3fa9ff','IN'],[state.b,'#ffab4a','OUT']]){if(time===null||time<viewStart||time>viewStart+visibleDuration())continue;const x=px(time);ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,height);ctx.stroke();ctx.fillStyle=color;ctx.font='bold 11px sans-serif';ctx.fillText(label,Math.min(w-31,x+4),13)}
+  const pos=px(media.currentTime||0);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(pos,0);ctx.lineTo(pos,height);ctx.stroke();
+ }
+ let lastVideoPaint=0,idleWaveJob=null;
+ function updateWave(){
+  if(!media.paused&&!waveDrag)followPlayhead();
+  if(wavePending)return;
+  if(r.kind==='video'&&media.paused&&!waveDrag&&typeof requestIdleCallback==='function'){
+   wavePending=true;idleWaveJob=requestIdleCallback(()=>{idleWaveJob=null;wavePending=false;paintWave()},{timeout:250});return;
+  }
+  if(r.kind==='video'&&!media.paused&&performance.now()-lastVideoPaint<240)return;
+  wavePending=true;requestAnimationFrame(()=>{wavePending=false;lastVideoPaint=performance.now();paintWave()});
+ }
+ function waveTime(e){const rect=canvas.getBoundingClientRect();return Math.max(0,Math.min(waveDuration(),viewStart+(e.clientX-rect.left)/rect.width*visibleDuration()))}
+ let dragStart=null,dragMoved=false,lastAudioScrub=0;
+ canvas.addEventListener('pointerdown',e=>{
+  if(!waveDuration())return;
+  const t=waveTime(e),tol=12/canvas.getBoundingClientRect().width*visibleDuration();
+  const nearA=state.a!==null&&Math.abs(t-state.a)<tol,nearB=state.b!==null&&Math.abs(t-state.b)<tol;
+  waveDrag=!e.shiftKey?'scrub':nearA&&nearB?(Math.abs(t-state.a)<=Math.abs(t-state.b)?'a':'b'):nearA?'a':nearB?'b':'range';
+  dragStart=t;dragMoved=false;canvas.setPointerCapture(e.pointerId);
+  if(waveDrag==='scrub'){
+   scrubWasPaused=media.paused;scrubStartedPlayback=false;scrubVideo=r.kind==='video';
+   if(scrubVideo){
+    requestVideoScrub(t,true);
+    if(scrubAudioBuffer){scrubAudioWasMuted=media.muted;media.muted=true;previewScrubAudio(t,true)}
+   }else {media.currentTime=t;loopNavigationOverride=true}
+   draw();
+   // Temporarily play during scrubbing for audible feedback, restoring pause on release.
+   if(scrubWasPaused){
+    const playRequest=media.play();
+    if(playRequest&&typeof playRequest.then==='function')playRequest.then(()=>{scrubStartedPlayback=true;if(waveDrag!=='scrub')media.pause()}).catch(()=>{});
+    else scrubStartedPlayback=true;
+   }
+  }
+ });
+ canvas.addEventListener('pointermove',e=>{
+  if(!waveDrag)return;
+  const t=waveTime(e);
+  if(Math.abs(t-dragStart)>Math.max(.05,visibleDuration()*4/canvas.getBoundingClientRect().width))dragMoved=true;
+  if(!dragMoved)return;
+  if(waveDrag==='scrub'){
+   if(scrubVideo){requestVideoScrub(t);previewScrubAudio(t)}else if(performance.now()-lastAudioScrub>55){media.currentTime=t;loopNavigationOverride=true;lastAudioScrub=performance.now()}
+  }else if(waveDrag==='range'){
+   state.a=Math.min(dragStart,t);state.b=Math.max(dragStart,t);
+   loopNavigationOverride=false;
+  }else if(waveDrag==='a'){
+   state.a=Math.min(t,state.b===null?waveDuration():Math.max(0,state.b-.06));
+  }else{
+   state.b=Math.max(t,state.a===null?0:state.a+.06);
+  }
+  if(waveDrag!=='scrub')loopNavigationOverride=false;
+  draw();
+ });
+ function finishWave(e){
+  if(!waveDrag)return;
+  if(waveDrag==='scrub'){
+   if(scrubVideo)requestVideoScrub(waveTime(e),true);else {media.currentTime=waveTime(e);loopNavigationOverride=true}
+   if(scrubWasPaused&&scrubStartedPlayback)media.pause();
+   finishScrubAudio();
+  }
+  if(!dragMoved&&waveDrag==='range')media.currentTime=waveTime(e);loopNavigationOverride=true;
+  if(dragMoved&&waveDrag!=='scrub'){loopNavigationOverride=false;save()}
+  waveDrag=null;dragStart=null;draw();
+ }
+ canvas.addEventListener('pointerup',finishWave);
+ canvas.addEventListener('pointercancel',()=>{if(videoScrubTimer!==null){clearTimeout(videoScrubTimer);videoScrubTimer=null}videoScrubPending=null;if(waveDrag==='scrub'&&scrubWasPaused&&scrubStartedPlayback)media.pause();finishScrubAudio();waveDrag=null;dragStart=null;draw()});
+ q('waveStart').onclick=()=>{loopNavigationOverride=false;state.a=media.currentTime;if(state.b!==null&&state.b<=state.a){state.b=null;state.loop=false}save();draw()};
+ q('waveEnd').onclick=()=>{loopNavigationOverride=false;state.b=media.currentTime;if(state.a!==null&&state.b<=state.a)state.loop=false;save();draw()};
+ // V45: Restore the original V37/V39 full-file decoding path for videos.
+ // Decode only on opening the file, not when floating, docking or resizing.
+ // No FFmpeg download or companion audio file is required.
+ const analysisToken=activeMediaURL;
+ async function analyzeWave(){
+  const info=q('waveInfo');let ac=null;
+  try{
+   info.textContent='Analyzing complete waveform…';
+   const AC=window.AudioContext||window.webkitAudioContext;
+   if(!AC)throw Error('Web Audio unavailable');
+   ac=new AC();
+   const bytes=await file.arrayBuffer();
+   const decoded=await ac.decodeAudioData(bytes);
+   const channels=decoded.numberOfChannels,frames=decoded.length;
+   const peaks=new Float32Array(3200);
+   const channelData=Array.from({length:channels},(_,i)=>decoded.getChannelData(i));
+   for(let k=0;k<peaks.length;k++){
+    const start=Math.floor(k*frames/peaks.length);
+    const end=Math.min(frames,Math.floor((k+1)*frames/peaks.length));
+    let peak=0;const step=Math.max(1,Math.floor((end-start)/250));
+    for(let j=start;j<end;j+=step)for(const data of channelData){const v=Math.abs(data[j]);if(v>peak)peak=v}
+    peaks[k]=peak;
+   }
+   if(activeMediaURL!==analysisToken)return;
+   if(r.kind==='video'){
+    scrubAudioBuffer=decoded;
+    // Keep the audio context alive for low-latency preview grains.
+    scrubAudioContext=ac;ac=null;
+   }
+   wavePeaks=peaks;
+   info.textContent=r.kind==='video'?'Waveform ready · drag to hear audio and scrub video':'Complete waveform ready · zoom and drag to set In/Out';
+   updateWave();
+  }catch(err){
+   if(activeMediaURL!==analysisToken)return;
+   console.warn('V37 waveform decoding unavailable for this file',err);
+   info.textContent=r.kind==='video'?'Video audio could not be decoded into a waveform in this browser. The interactive loop timeline still works.':'Waveform unavailable for this format. The interactive loop timeline still works.';
+   updateWave();
+  }finally{if(ac)ac.close().catch(()=>{})}
+ }
+
+ analyzeWave();
+ media.addEventListener('timeupdate',updateWave);media.addEventListener('playing',updateWave);media.addEventListener('loadedmetadata',updateWave);media.addEventListener('pause',updateWave);media.addEventListener('seeked',updateWave);window.addEventListener('resize',updateWave);
+
+ let loopNavigationOverride=false;
+ function manualNavigate(t){loopNavigationOverride=true;media.currentTime=Math.max(0,Math.min(Number.isFinite(media.duration)?media.duration:Infinity,t));draw()}
+ q('toggleLoop').onclick=()=>{if(!valid()){alert('Select a loop by dragging across the waveform, or set In and Out at the playhead.');return}state.loop=!state.loop;loopNavigationOverride=false;if(state.loop&&(media.currentTime<state.a||media.currentTime>=state.b))media.currentTime=state.a;save();draw()};
+ q('clearLoop').onclick=()=>{state.a=null;state.b=null;state.loop=false;save();draw()};
+ const playPause=q('mediaPlayPause');
+ function updatePlayPause(){playPause.classList.toggle('mcb-is-playing',!media.paused);playPause.textContent=media.paused?'▶ Play':'⏸ Pause';playPause.setAttribute('aria-label',media.paused?'Play':'Pause')}
+ function togglePlayback(){if(!media.paused){media.pause();return}loopNavigationOverride=false;if(state.loop&&valid()&&(media.currentTime<state.a||media.currentTime>=state.b))media.currentTime=state.a;media.play().catch(err=>console.warn('Playback could not start',err))}
+ playPause.onclick=togglePlayback;
+ media.addEventListener('play',updatePlayPause);media.addEventListener('pause',updatePlayPause);media.addEventListener('ended',updatePlayPause);
+ activePlaybackToggle=togglePlayback;activePlaybackMedia=media;updatePlayPause();
+ 
+ 
+ q('jumpToIn').onclick=()=>{if(state.a!==null)manualNavigate(state.a)};
+ q('jumpToOut').onclick=()=>{if(state.b!==null)manualNavigate(state.b)};
+ q('nudgeLeft').onclick=()=>{manualNavigate(media.currentTime-0.05)};
+ q('nudgeRight').onclick=()=>{manualNavigate(media.currentTime+0.05)};
+ q('jumpBack').onclick=()=>{manualNavigate(media.currentTime-5)};
+ q('jumpForward').onclick=()=>{manualNavigate(media.currentTime+5)};
+ media.addEventListener('timeupdate',()=>{if(state.loop&&valid()&&!media.paused){if(!loopNavigationOverride&&media.currentTime>=state.b-.04)media.currentTime=state.a}draw()});
+ media.addEventListener('seeked',()=>{draw();if(r.kind==='video')paintWave()});media.addEventListener('loadedmetadata',draw);
+ media.addEventListener('ended',()=>{if(state.loop&&valid()&&!loopNavigationOverride){media.currentTime=state.a;media.play().catch(()=>{})}});
+ draw();
+}
+
+let activePdfURL=null,activeMediaURL=null;
+let activePlaybackToggle=null,activePlaybackMedia=null;
+document.addEventListener('keydown',event=>{
+ if(event.code!=='Space'||event.repeat||event.altKey||event.ctrlKey||event.metaKey||!activePlaybackToggle||!activePlaybackMedia?.isConnected)return;
+ const target=event.target;
+ if(target?.closest?.('input,textarea,select,[contenteditable="true"],[role="textbox"]'))return;
+ event.preventDefault();activePlaybackToggle();
+});
+function closePdf(){if(document.fullscreenElement?.classList.contains('pdf-workspace'))document.exitFullscreen().catch(()=>{});if(fullscreenPlayerRestore)fullscreenPlayerRestore();$('practicePdfPreview').replaceChildren();$('resourcePdfPreview').replaceChildren();if(activePdfURL){URL.revokeObjectURL(activePdfURL);activePdfURL=null}}
+function closeMedia(){if(document.fullscreenElement?.classList.contains('media-viewer-true-fullscreen'))document.exitFullscreen().catch(()=>{});document.querySelectorAll('body > .speed-menu').forEach(el=>el.remove());document.body.classList.remove('player-expanded-open');document.querySelectorAll('.player-expanded').forEach(el=>el.classList.remove('player-expanded','video-practice-view'));activePlaybackToggle=null;activePlaybackMedia=null;if(playerPipWindow){if(pipPlayerRestore){const restore=pipPlayerRestore;pipPlayerRestore=null;restore()}playerPipWindow.close();playerPipWindow=null}for(const id of ['resourcePreview','practiceMediaPreview']){const el=$(id);el.querySelectorAll('audio,video').forEach(m=>m.pause());el.replaceChildren();el.classList.remove('floating-player','player-expanded','video-practice-view')}if(activeMediaURL){URL.revokeObjectURL(activeMediaURL);activeMediaURL=null}}
+function closePreview(){closePdf();closeMedia();$('resourcePreviewCard').hidden=true}
+$('closeResourcePreview').onclick=closePreview;
+let fullscreenPlayerRestore=null;
+function bringPlayerIntoFullscreen(panel){
+ const player=activePlaybackMedia?.closest('#practiceMediaPreview,#resourcePreview');
+ if(!player||!player.contains(activePlaybackMedia)||playerPipWindow)return;
+ const parent=player.parentNode,next=player.nextSibling;
+ const originalStyle=player.getAttribute('style');
+ const originallyFloating=player.classList.contains('floating-player');
+ const originallyMini=player.classList.contains('mini-media-player');
+ fullscreenPlayerRestore=()=>{
+  if(parent){parent.insertBefore(player,next&&next.parentNode===parent?next:null)}
+  player.classList.remove('pdf-fullscreen-player');
+  player.classList.toggle('floating-player',originallyFloating);
+  player.classList.toggle('mini-media-player',originallyMini);
+  if(originalStyle===null)player.removeAttribute('style');else player.setAttribute('style',originalStyle);
+  fullscreenPlayerRestore=null;
+ };
+ panel.appendChild(player);
+ player.classList.add('pdf-fullscreen-player');
+ player.classList.add('floating-player');
+ player.style.left='auto';player.style.right='20px';player.style.top='75px';
+ player.style.width=player.classList.contains('mini-media-player')?'min(420px,45vw)':'min(430px,45vw)';
+ player.style.height=player.classList.contains('mini-media-player')?'auto':'min(440px,70vh)';
+}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&fullscreenPlayerRestore)fullscreenPlayerRestore()});
+function makePdfViewer(file,r,host){
+ closePdf();
+ if(!(file instanceof Blob))throw new Error('The saved PDF is not a readable file. Please reattach it.');
+ const pdf=file.type==='application/pdf'?file:new Blob([file],{type:'application/pdf'});
+ activePdfURL=URL.createObjectURL(pdf);
+ const panel=document.createElement('section');panel.className='pdf-workspace';
+ const bar=document.createElement('div');bar.className='pdf-bar';
+ const title=document.createElement('strong');title.textContent=mediaDisplayName(r.name);
+ const full=document.createElement('button');full.type='button';full.textContent='Full Screen';full.className='secondary';
+ full.onclick=async()=>{try{if(document.fullscreenElement===panel)await document.exitFullscreen();else {await panel.requestFullscreen();bringPlayerIntoFullscreen(panel)}}catch(e){alert('Full screen is unavailable: '+e.message)}};
+ const download=document.createElement('a');download.textContent='Download PDF';download.href=activePdfURL;download.download=r.name;download.className='secondary';download.style.cssText='padding:8px 12px;border:1px solid #b7c7d9;border-radius:6px;text-decoration:none';
+ const close=document.createElement('button');close.type='button';close.textContent='Close PDF';close.className='secondary';close.onclick=closePdf;
+ bar.append(title,full,download,close);
+ const frame=document.createElement('div');frame.className='pdf-frame';
+ const iframe=document.createElement('iframe');iframe.title=r.name;iframe.src=activePdfURL;iframe.setAttribute('allowfullscreen','');
+ frame.append(iframe);panel.append(bar,frame);host.append(panel);
+}
+
+function enablePlayerDrag(host,bar){
+ let start=null;
+ bar.addEventListener('pointerdown',e=>{
+  if(!host.classList.contains('floating-player')||e.target.closest('button,input,label'))return;
+  const rect=host.getBoundingClientRect();
+  start={x:e.clientX,y:e.clientY,left:rect.left,top:rect.top,id:e.pointerId};
+  bar.setPointerCapture(e.pointerId);e.preventDefault();
+ });
+ bar.addEventListener('pointermove',e=>{
+  if(!start||e.pointerId!==start.id)return;
+  host.style.left=Math.max(0,Math.min(window.innerWidth-70,start.left+e.clientX-start.x))+'px';
+  host.style.top=Math.max(0,Math.min(window.innerHeight-45,start.top+e.clientY-start.y))+'px';
+ });
+ for(const type of ['pointerup','pointercancel'])bar.addEventListener(type,()=>{start=null});
+}
+let playerPipWindow=null;
+let pipPlayerRestore=null;
+let trueFullscreenWasFloating=false;
+async function floatVideoInWindow(host,floatButton){
+ if(!window.documentPictureInPicture){
+  alert('This browser does not support separate always-on-top video windows. Try the installed Chrome desktop app on GitHub Pages.');return false;
+ }
+ try{
+  // Browser determines the maximum size of a Document PiP window.
+  const pip=await window.documentPictureInPicture.requestWindow({width:800,height:650});
+  playerPipWindow=pip;
+  const placeholder=document.createComment('floating video return point');
+  host.parentNode.insertBefore(placeholder,host);
+  for(const sheet of document.styleSheets){
+   try{const style=pip.document.createElement('style');style.textContent=Array.from(sheet.cssRules).map(rule=>rule.cssText).join('\n');pip.document.head.append(style)}catch(e){}
+  }
+  pip.document.body.style.cssText='margin:0;width:100%;height:100dvh;overflow:hidden;background:#fff';
+  pip.document.body.append(host);
+  host.classList.remove('floating-player','player-expanded','video-practice-view','mini-media-player');
+  host.classList.add('pip-video-player');
+  // Float is playback-only: hide waveform and editing divider. Loop values persist.
+  host.querySelector('.wave-wrap')?.setAttribute('aria-hidden','true');
+  host.style.cssText='';
+  document.body.classList.remove('player-expanded-open');
+  floatButton.textContent='Dock Player';
+  const fullButton=host.querySelector('.media-fullscreen-btn');if(fullButton)fullButton.hidden=true;
+  pipPlayerRestore=()=>{
+   if(placeholder.parentNode){placeholder.replaceWith(host);host.classList.remove('pip-video-player');host.querySelector('.wave-wrap')?.removeAttribute('aria-hidden');host.classList.add('player-expanded','video-practice-view');host.style.cssText='';document.body.classList.add('player-expanded-open');}
+   floatButton.textContent='Float Player';if(fullButton)fullButton.hidden=false;
+  };
+  pip.addEventListener('pagehide',()=>{
+   if(playerPipWindow===pip)playerPipWindow=null;
+   if(pipPlayerRestore){const restore=pipPlayerRestore;pipPlayerRestore=null;restore();}
+  },{once:true});
+  return true;
+ }catch(e){alert('Floating video window unavailable: '+e.message);return false;}
+}
+async function enterTrueVideoFullscreen(host,button){
+ // A Document Picture-in-Picture window has browser-enforced size limits.
+ // Move the same playing media element back into the main page before fullscreen.
+ const wasPip=!!playerPipWindow;
+ trueFullscreenWasFloating=wasPip||host.classList.contains('floating-player');
+ if(wasPip){
+  if(pipPlayerRestore){pipPlayerRestore();pipPlayerRestore=null;}
+  const pip=playerPipWindow;playerPipWindow=null;
+  try{pip.close()}catch(e){}
+ }
+ host.classList.add('media-viewer-true-fullscreen');
+ try{
+  await host.requestFullscreen();
+  button.textContent='Exit Full Screen';
+ }catch(e){
+  host.classList.remove('media-viewer-true-fullscreen');
+  alert('Browser fullscreen unavailable: '+e.message);
+ }
+}
+document.addEventListener('fullscreenchange',()=>{
+ const host=document.querySelector('.media-viewer-true-fullscreen');
+ if(!host)return;
+ const button=host.querySelector('.media-fullscreen-btn');
+ if(document.fullscreenElement===host){if(button)button.textContent='Exit Full Screen';return;}
+ host.classList.remove('media-viewer-true-fullscreen');
+ if(button)button.textContent='Full Screen';
+ if(trueFullscreenWasFloating&&!host.classList.contains('floating-player')){
+  host.classList.add('floating-player');
+  host.style.left='24px';host.style.top='24px';
+  host.style.width='min(640px, calc(100vw - 48px))';host.style.height='min(540px, 78vh)';
+ }
+});
+function togglePlayerFullscreen(host,button){
+ const expanded=host.classList.toggle('player-expanded');
+ if(!expanded)host.classList.remove('video-practice-view');
+ if(expanded){
+  host.dataset.wasFloating=String(host.classList.contains('floating-player'));
+  host.classList.remove('floating-player');
+  host.dataset.previousStyle=host.getAttribute('style')||'';
+  host.removeAttribute('style');
+ }else{
+  if(host.dataset.wasFloating==='true')host.classList.add('floating-player');
+  const previous=host.dataset.previousStyle||'';
+  if(previous)host.setAttribute('style',previous);else host.removeAttribute('style');
+ }
+ button.textContent=expanded?'Exit Full Screen':'Full Screen';
+ document.body.classList.toggle('player-expanded-open',expanded);
+}
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){
+  const expanded=document.querySelector('.player-expanded');
+  if(expanded&&!expanded.classList.contains('video-practice-view')){e.preventDefault();const button=expanded.querySelector('.media-fullscreen-btn');if(button)togglePlayerFullscreen(expanded,button)}
+ }
+});
+function makeMediaViewer(file,r,host){
+ closeMedia();activeMediaURL=URL.createObjectURL(file);
+ const bar=document.createElement('div');bar.className='media-topbar';
+ const title=document.createElement('strong');title.textContent=mediaDisplayName(r.name);
+ const isVideo=r.kind==='video';
+ const float=document.createElement('button');float.className='secondary';float.textContent='Float Player';
+ float.title=isVideo?'Open a separate always-on-top video window; drag the window between monitors and resize its edges':'Float compact MP3 controls over the PDF';
+ float.onclick=async()=>{
+  if(isVideo){
+   if(playerPipWindow){playerPipWindow.close();return;}
+   await floatVideoInWindow(host,float);
+   return;
+  }
+  // Audio remains a compact draggable player over the PDF within this page.
+  const floating=!host.classList.contains('floating-player');
+  if(floating){host.classList.add('floating-player','mini-media-player');host.style.left='24px';host.style.top='24px';host.style.width='min(420px, calc(100vw - 30px))';host.style.height='auto';}
+  else{host.classList.remove('floating-player','mini-media-player');host.style.cssText='';}
+  float.textContent=floating?'Dock Player':'Float Player';
+ };
+ const full=document.createElement('button');full.type='button';full.className='secondary media-fullscreen-btn';full.textContent='Full Screen';
+ full.title='True screen fullscreen for video; Escape exits';
+ full.onclick=()=>{if(isVideo){if(document.fullscreenElement===host)document.exitFullscreen();else enterTrueVideoFullscreen(host,full);}else togglePlayerFullscreen(host,full);};
+ const close=document.createElement('button');close.className='secondary mcb-float-audio-close';close.textContent='Close Player';close.onclick=()=>{if(playerPipWindow)playerPipWindow.close();closeMedia();$('resourcePreviewCard').hidden=true};
+ bar.append(title,float,full,close);host.append(bar);enablePlayerDrag(host,bar);
+ const media=document.createElement(r.kind);media.controls=true;media.preload='metadata';media.src=activeMediaURL;
+ media.style.cssText='display:block;width:100%;height:100%;object-fit:contain';
+ const videoRegion=document.createElement('div');videoRegion.className='media-video-region';
+ videoRegion.append(media);host.append(videoRegion);
+ const divider=document.createElement('div');divider.className='media-splitter';divider.setAttribute('role','separator');divider.setAttribute('aria-label','Drag to resize video and waveform');divider.title='Drag up or down to resize video relative to waveform';
+ divider.innerHTML='<span aria-hidden="true">⋮⋮&nbsp; DRAG TO RESIZE VIDEO &nbsp;⋮⋮</span>';
+ host.append(divider);
+ if(r.kind==='video'){
+  videoRegion.style.height='240px';
+  let dragging=null;
+  divider.addEventListener('pointerdown',e=>{
+   if(e.button!==0&&e.pointerType==='mouse')return;
+   dragging={y:e.clientY,h:videoRegion.getBoundingClientRect().height};
+   divider.setPointerCapture(e.pointerId);e.preventDefault();
+  });
+  divider.addEventListener('pointermove',e=>{
+   if(!dragging)return;
+   const available=Math.max(300,host.getBoundingClientRect().height||window.innerHeight);
+   const newHeight=Math.max(85,Math.min(Math.max(available-150,120),dragging.h+e.clientY-dragging.y));
+   videoRegion.style.height=newHeight+'px';
+  });
+  for(const eventName of ['pointerup','pointercancel','lostpointercapture'])divider.addEventListener(eventName,()=>{dragging=null});
+  divider.tabIndex=0;
+  divider.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();videoRegion.style.height=Math.max(85,videoRegion.getBoundingClientRect().height+(e.key==='ArrowDown'?30:-30))+'px'}});
+ }else{videoRegion.classList.add('audio-region');divider.hidden=true}
+ addMediaControls(media,r,host,file);
+ if(r.kind==='video'){
+  // Open a local video in Normal Size (expanded practice workspace, not browser fullscreen).
+  // Full Screen enters actual browser fullscreen; Exit Full Screen returns to Normal Size.
+  // Keep waveform and transport visible; Close Player restores the course.
+  host.classList.remove('mini-media-player','floating-player');
+  host.classList.add('player-expanded','video-practice-view');
+  host.dataset.playerMode='normal';
+  document.body.classList.add('player-expanded-open');
+  full.textContent='Full Screen';
+ }
+}
+
+const resourceTabURLs=[];
+async function openResourceContext(event,id){
+ event.preventDefault();
+ const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;
+ // Open a tab synchronously in the right-click gesture to avoid popup blockers.
+ const tab=window.open('about:blank','_blank');
+ if(!tab){alert('Your browser blocked the new tab. Allow pop-ups for this page and try again.');return}
+ try{
+   tab.document.title='Opening '+r.name;
+   tab.document.body.textContent='Loading local resource…';
+   const file=await mediaGet(id);
+   if(!file){tab.close();offerMissingMediaRelink(id,()=>previewResource(id));return}
+   if(r.kind==='pdf'&&location.protocol==='file:'){
+    tab.document.body.textContent='Chrome may not open PDF blob:null URLs from a local file. Use the Windows launcher to run the Course Builder at http://localhost:8765, or use Download PDF in the PDF viewer.';
+    return;
+   }
+   const url=URL.createObjectURL(file);
+   resourceTabURLs.push(url);
+   tab.location.replace(url);
+ }catch(err){
+   try{tab.document.body.textContent='Could not open resource: '+err.message}catch(_){}
+ }
+}
+window.addEventListener('pagehide',()=>resourceTabURLs.forEach(url=>URL.revokeObjectURL(url)));
+
+async function previewResource(id,inPractice=false){const r=(course.resources||[]).find(x=>x.id===id);if(!r)return;let file;try{file=await mediaGet(id)}catch(e){alert('Could not read media: '+e.message);return}if(!file){offerMissingMediaRelink(id,()=>previewResource(id,inPractice));return}const host=$(inPractice?'practiceMediaPreview':'resourcePreview');$('resourcePreviewTitle').textContent=mediaDisplayName(r.name);if(!inPractice)$('resourcePreviewCard').hidden=false;try{if(r.kind==='pdf'){makePdfViewer(file,r,$(inPractice?'practicePdfPreview':'resourcePdfPreview'))}else{makeMediaViewer(file,r,host)}}catch(e){alert('Unable to open '+r.name+': '+e.message);console.error(e);return}if(r.kind!=='video'){if(!inPractice)$('resourcePreviewCard').scrollIntoView({behavior:'smooth',block:'start'});else (r.kind==='pdf'?$(inPractice?'practicePdfPreview':'resourcePdfPreview'):host).scrollIntoView({behavior:'smooth',block:'nearest'})}}
+async function removeResource(id){const uses=course.classes.flatMap(c=>c.items||[]).filter(it=>(it.linkedResourceIds||[]).includes(id));if(!confirm(uses.length?'This resource is linked to '+uses.length+' practice item(s). Delete it from the library and all those items?':'Remove this resource?'))return;for(const c of course.classes)for(const it of c.items||[])it.linkedResourceIds=(it.linkedResourceIds||[]).filter(x=>x!==id);course.resources=course.resources.filter(r=>r.id!==id);try{await mediaDelete(id)}catch(e){}closePreview();markDirty();renderResources();renderPracticeResources();renderClasses();renderClasses()}
+
+function classResourceSummary(c){
+ const classScope='class:'+c.id, itemScopes=new Set((c.items||[]).map(it=>'item:'+it.id));
+ const assigned=(course.resources||[]).filter(r=>r.scope==='course'||r.scope===classScope||itemScopes.has(r.scope));
+ const linked=(c.items||[]).filter(it=>it.url?.trim());
+ if(!assigned.length&&!linked.length)return '<p class="help">No files or links assigned yet. Use Attach Files or add a practice item link.</p>';
+ const files=assigned.map(r=>`<div class="class-resource-entry"><span>${escapeHTML(mediaDisplayName(r.name))} <small>(${escapeHTML(scopeLabel(r.scope))})</small></span><button class="secondary" onclick="openClassResource('${c.id}','${r.id}')">Open in Practice Room</button></div>`).join('');
+ const links=linked.map(it=>`<div class="class-resource-entry"><span>${youtubeVideoId(it.url)?youtubeLinkLabelHTML(it):escapeHTML(it.name)} </span><button class="secondary" onclick="openClassPracticeLink('${c.id}','${it.id}')">${youtubeVideoId(it.url)?'▶ YouTube Player':'Open in Practice Room'}</button></div>`).join('');
+ return files+links;
+}
+function openClassResource(classId,resourceId){
+ practiceThisClass(classId);
+ const r=(course.resources||[]).find(x=>x.id===resourceId);
+ if(r?.scope?.startsWith('item:')){
+  const id=r.scope.slice(5);const c=selectedClass();
+  if(c?.items.some(it=>it.id===id)){$('practiceItem').value=id;renderPracticeResources()}
+ }
+ previewResource(resourceId,true);
+}
+function openClassPracticeLink(classId,itemId){
+ practiceThisClass(classId);$('practiceItem').value=itemId;renderPracticeResources();if(youtubeVideoId(selectedItem()?.url||''))openYoutubeCompanion();else openPracticeLink();
+}
+function renderClasses(){const host=$('classes');if(!course.classes.length){host.innerHTML='<div class="empty">No classes yet. Choose “Add Class” to start building your course.</div>';return}host.innerHTML=course.classes.map((c,i)=>`<div class="class-card"><div class="row"><div class="grow"><h3>${escapeHTML(c.name)}</h3><div class="help">${escapeHTML(c.description||'No description yet')} · <span class="pill">${escapeHTML(c.difficulty||'Introduction')}</span> · ${c.minutes||30} min class session</div></div><div class="item-actions"><button class="secondary" onclick="editClass('${c.id}')">Edit</button><button class="secondary" onclick="moveClass('${c.id}',-1)" ${i===0?'disabled':''}>↑</button><button class="secondary" onclick="moveClass('${c.id}',1)" ${i===course.classes.length-1?'disabled':''}>↓</button><button class="danger" onclick="deleteClass('${c.id}')">Delete</button></div></div><div style="margin:10px 0">${c.items?.length?c.items.map(it=>`<div class="item"><div><b>${escapeHTML(it.name)}</b> <span class="pill">${escapeHTML(it.type)}</span><br><small>${Number(it.minutes)||0} min</small></div><div class="item-actions"><button class="secondary" onclick="editItem('${c.id}','${it.id}')">Edit</button><button class="secondary" onclick="editItem('${c.id}','${it.id}')">Files</button><button class="danger" onclick="deleteItem('${c.id}','${it.id}')">×</button></div></div>`).join(''):'<p class="help">No practice items yet.</p>'}</div><div class="class-resource-summary"><b>Class resources</b>${classResourceSummary(c)}</div><button class="secondary" onclick="addItem('${c.id}')">+ Add Practice Item</button> <button onclick="practiceThisClass('${c.id}')">Practice This Class</button> <button class="secondary" onclick="attachToClass('${c.id}')">Attach Files</button></div>`).join('')}
+function moveClass(id,dir){const i=course.classes.findIndex(c=>c.id===id),j=i+dir;if(j<0||j>=course.classes.length)return;[course.classes[i],course.classes[j]]=[course.classes[j],course.classes[i]];markDirty();render()}
+function deleteClass(id){if(!confirm('Delete this class and all its practice items?'))return;course.classes=course.classes.filter(c=>c.id!==id);markDirty();render()}
+function deleteItem(cid,iid){const c=course.classes.find(x=>x.id===cid);if(!c||!confirm('Delete this practice item?'))return;c.items=c.items.filter(x=>x.id!==iid);markDirty();render()}
+function practiceThisClass(id){switchTab('builder');$('practiceClass').value=id;renderPracticeItems();renderPracticeResources();const c=course.classes.find(x=>x.id===id);$('timerMinutes').value=c?.minutes||30;stopTimer();secondsLeft=0;showTimer();$('practice').scrollIntoView({behavior:'smooth',block:'start'})}
+function selectedClass(){return course.classes.find(c=>c.id===$('practiceClass').value)}
+function selectedItem(){return selectedClass()?.items.find(i=>i.id===$('practiceItem').value)}
+$('useClassTime').onclick=()=>{$('timerMinutes').value=selectedClass()?.minutes||30;$('resetTimer').click()};
+$('useItemTime').onclick=()=>{$('timerMinutes').value=selectedItem()?.minutes||10;$('resetTimer').click()};
+function renderSelectors(){const oldC=$('practiceClass').value,oldI=$('practiceItem').value;$('practiceClass').innerHTML=course.classes.map(c=>`<option value="${c.id}">${escapeHTML(c.name)}</option>`).join('')||'<option value="">No classes yet</option>';if(course.classes.some(c=>c.id===oldC))$('practiceClass').value=oldC;renderPracticeItems(oldI)}
+function renderPracticeItems(old=''){const c=course.classes.find(x=>x.id===$('practiceClass').value);$('practiceItem').innerHTML=(c?.items||[]).map(i=>`<option value="${i.id}">${escapeHTML(i.name)}</option>`).join('')||'<option value="">No items in this class</option>';if(c?.items.some(i=>i.id===old))$('practiceItem').value=old;renderPracticeResources()}
+function renderLibrary(){const all=course.classes.flatMap(c=>(c.items||[]).map(i=>({...i,className:c.name})));$('libraryItems').innerHTML=all.length?all.map(i=>`<div class="item"><div><b>${escapeHTML(i.name)}</b><br><small>${escapeHTML(i.className)} · ${escapeHTML(i.type)} · ${i.minutes} min ${i.url?' · <a href="'+escapeHTML(i.url)+'" target="_blank" rel="noopener">${youtubeLinkLabelHTML(i)}</a>':''}</small></div></div>`).join(''):'<div class="empty">Your practice library will appear here as you add items to classes.</div>'}
+function renderProgress(){const items=course.classes.reduce((n,c)=>n+(c.items?.length||0),0);$('stats').innerHTML=`<div class="stat"><b>${course.classes.length}</b>Classes</div><div class="stat"><b>${items}</b>Practice items</div><div class="stat"><b>${course.history.length}</b>Practice logs</div>`;$('progressClasses').innerHTML=course.classes.length?course.classes.map(c=>`<p><b>${escapeHTML(c.name)}</b> — ${c.items?.length||0} items</p>`).join(''):'<p class="help">Add classes to begin tracking your course.</p>';$('history').innerHTML=course.history.length?[...course.history].reverse().slice(0,30).map(h=>`<div class="item"><div><b>${escapeHTML(h.item||'Practice session')}</b><br><small>${new Date(h.date).toLocaleString()} · ${h.minutes} min · Rating ${h.rating}/5</small></div></div>`).join(''):'<p class="help">Your completed practice logs will appear here.</p>'}
+function switchTab(id){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===id))}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+['courseName','instrument','level','dailyTarget','goals'].forEach(id=>$(id).addEventListener('change',()=>{syncFields();markDirty()}));
+$('addClassBtn').onclick=addClass;$('practiceClass').onchange=()=>{renderPracticeItems();$('useClassTime').click();closePreview()};$('practiceItem').onchange=()=>{$('useItemTime').click();renderPracticeResources();closePreview()};
+$('saveBtn').onclick=saveCourse;$('saveAsBtn').onclick=saveAs;$('openBtn').onclick=openCourse;$('reconnectBtn').onclick=reconnect;$('backupBtn').onclick=()=>{syncFields();downloadJSON({...course,schemaVersion:3,exportedAt:new Date().toISOString()},filename().replace('.json','-backup.json'));setStatus('Backup download requested',true)};
+$('newBtn').onclick=async()=>{if(window.MCBCloud?.active()){alert('Use New cloud course to create a synced course, or sign out for local-only editing.');return}if(dirty&&!confirm('You have unsaved changes. Create a new course anyway?'))return;clearTimeout(autoTimer);course=blankCourse();fileHandle=null;await dbSet(null);fillFields();dirty=true;setStatus('New course — use Save As to link a file')};
+$('fileInput').onchange=async e=>{if(window.MCBCloud?.active()){alert('Sign out before opening a local JSON file. You can then sign in and save it as a new cloud course.');e.target.value='';return}const f=e.target.files?.[0];if(!f)return;if(dirty&&!confirm('Discard unsaved changes and open the selected course?')){e.target.value='';return}try{loadCourse(JSON.parse(await f.text()));fileHandle=null;await dbSet(null);setStatus('Opened '+f.name+' — Save As to link a new version',true)}catch(err){alert('Could not open course: '+err.message)}e.target.value=''};
+$('saveNext').onclick=()=>{course.next={focus:$('nextFocus').value,goal:$('nextGoal').value,notes:$('nextNotes').value};markDirty();$('nextSaved').textContent='Plan saved in this course. Use Save to write it to your course file.'};
+let endAt=0;
+function showTimer(){const m=Math.floor(secondsLeft/60),s=secondsLeft%60;$('timerDisplay').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+function stopTimer(){clearInterval(timerId);timerId=null;timerRunning=false}
+$('startTimer').onclick=()=>{if(!timerRunning){if(secondsLeft<=0)secondsLeft=Math.max(1,Number($('timerMinutes').value)||25)*60;timerRunning=true;endAt=Date.now()+secondsLeft*1000;timerId=setInterval(()=>{secondsLeft=Math.max(0,Math.ceil((endAt-Date.now())/1000));showTimer();if(secondsLeft<=0){stopTimer();$('timerLabel').textContent='Time is up — take a short break or log your practice.'}},250);$('timerLabel').textContent='Timer running'}};
+$('pauseTimer').onclick=()=>{if(timerRunning){secondsLeft=Math.max(0,Math.ceil((endAt-Date.now())/1000));stopTimer();showTimer();$('timerLabel').textContent='Timer paused'}};
+$('resetTimer').onclick=()=>{stopTimer();secondsLeft=0;showTimer();$('timerLabel').textContent='Timer stopped'};
+$('logPractice').onclick=()=>{const c=course.classes.find(x=>x.id===$('practiceClass').value),it=c?.items.find(x=>x.id===$('practiceItem').value),rating=Number($('rating').value);course.history.push({date:new Date().toISOString(),className:c?.name||'',item:it?.name||'Practice session',minutes:Number($('timerMinutes').value)||25,rating});markDirty();renderProgress();$('ratingAdvice').textContent=rating>=4?'Strong result. Consider increasing the challenge slightly, with your approval.':rating<=2?'Keep this in the rotation. Slow it down, isolate the difficult part, and revisit it next session.':'Good development. Repeat until it feels more consistent before increasing difficulty.'};
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+try{const cached=localStorage.getItem('musicCourseBuilder_v4_autosave')||localStorage.getItem('musicCourseBuilder_v3_autosave');if(cached){const data=JSON.parse(cached);if(data&&Array.isArray(data.classes)){course={...blankCourse(),...data};setStatus('Recovered browser backup — save to a course file')}}}catch(e){}
+fillFields();showTimer();
+// Do not let asynchronous local-file restoration overwrite a Firebase course at startup.
+window.MCBCloudAuthReady=new Promise(resolve=>{window.MCBCloudAuthResolved=resolve});
+(async()=>{
+ const handle=await dbGet();
+ await Promise.race([window.MCBCloudAuthReady,new Promise(resolve=>setTimeout(resolve,8000))]);
+ if(window.MCBCloud?.active()||!handle)return;
+ fileHandle=handle;
+ try{
+  if(await permission(handle)){
+   const f=await handle.getFile();
+   if(window.MCBCloud?.active())return;
+   loadCourse(JSON.parse(await f.text()));setStatus('Reopened '+handle.name+' · autosave on',true);
+  }else{$('reconnectBtn').hidden=false;setStatus('Remembered '+handle.name+' — click Reconnect File')}
+ }catch(e){$('reconnectBtn').hidden=false;setStatus('Linked file needs reconnection')}
+})();
+
+// Independent YouTube companion: Version 37 original player remains untouched.
+function openYoutubeCompanion(){
+ const item=typeof selectedItem==='function'?selectedItem():null;
+ const editor=document.getElementById('itemEditUrl');
+ const editing=document.getElementById('itemModal')&&!document.getElementById('itemModal').hidden;
+ const raw=((editing&&editor?.value)||item?.url||'').trim();
+ const target=new URL('youtube-player.html',document.baseURI);
+ if(raw){
+   try{
+     const u=new URL(raw);
+     if(['youtube.com','www.youtube.com','m.youtube.com','youtu.be','www.youtu.be','www.youtube-nocookie.com'].includes(u.hostname))target.searchParams.set('video',raw);
+   }catch(e){}
+ }
+ window.open(target.href,'_blank','noopener');
+}
+document.getElementById('youtubeCompanionBtn').addEventListener('click',openYoutubeCompanion);
+</script>
+<script type="module" src="firebase-v55.js"></script>
+
+<style id="v563-audio-bridge-style">
+body.v563-audio-mode > :not(#resourcePreviewCard):not(script):not(style) {display:none!important}
+body.v563-audio-mode #resourcePreviewCard{display:block!important;position:fixed!important;inset:0!important;z-index:2147483640!important;overflow:auto!important;background:#f2f6fb!important;margin:0!important;padding:10px!important;border:0!important;border-radius:0!important;max-width:none!important}
+body.v563-audio-mode #resourcePreviewCard #closeResourcePreview{display:none!important}
+body.v563-audio-mode #resourcePreviewCard #resourcePreview{display:block!important;min-height:60vh}
+</style>
+<script>
+window.addEventListener('message',async function(event){
+ const msg=event.data;
+ if(!msg||msg.type!=='MCB_V563_AUDIO'||!(msg.file instanceof Blob))return;
+ try{
+  const key='v563-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+  await mediaPut(key,msg.file);
+  const r={id:key,name:msg.name||msg.file.name||'Audio',kind:'audio',size:msg.file.size,scope:'course'};
+  course.resources=course.resources||[];
+  course.resources.push(r);
+  document.body.classList.add('v563-audio-mode');
+  await previewResource(key,false);
+  document.getElementById('resourcePreviewCard').hidden=false;
+ }catch(err){console.error('MCB V56.3 original player bridge',err);alert('Unable to open original audio player: '+err.message)}
+});
+</script>
+</body>
+</html>
