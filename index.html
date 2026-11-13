@@ -261,6 +261,55 @@ label{display:block;font-weight:650;font-size:13px;margin:0 0 5px}input,select,t
 .media-tools .mcb-control-unit #mediaHelp::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22%2318375d%22%3E%3Ctext%20x%3D%2230%22%20y%3D%2242%22%20font-size%3D%2248%22%20font-weight%3D%22900%22%20text-anchor%3D%22middle%22%3E%3F%3C%2Ftext%3E%3C%2Fsvg%3E")!important}
 .media-tools .mcb-control-unit #mediaPlayPause.mcb-is-playing::before{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2048%22%20fill%3D%22white%22%3E%3Crect%20x%3D%2212%22%20y%3D%224%22%20width%3D%2213%22%20height%3D%2240%22%20rx%3D%222%22%2F%3E%3Crect%20x%3D%2235%22%20y%3D%224%22%20width%3D%2213%22%20height%3D%2240%22%20rx%3D%222%22%2F%3E%3C%2Fsvg%3E")!important;filter:none!important}
 @media(max-width:480px){.media-tools .media-control-strip{gap:5px!important}.media-tools .mcb-control-unit{min-width:68px}.media-tools .mcb-control-label{font-size:11px!important}}
+
+/* V55.7.26: compact audio-float toolbar; full-sized controls elsewhere. */
+.floating-player.mini-media-player .media-tools .mcb-control-unit{min-width:48px!important;gap:3px!important}
+.floating-player.mini-media-player .media-tools .media-control-strip{gap:5px!important}
+.floating-player.mini-media-player .media-tools .mcb-control-unit>button,
+.floating-player.mini-media-player .media-tools .mcb-control-unit>.help-popover-anchor>button{
+  width:46px!important;height:46px!important;min-width:46px!important;max-width:46px!important;border-radius:9px!important;
+}
+.floating-player.mini-media-player .media-tools .mcb-control-unit>button::before,
+.floating-player.mini-media-player .media-tools .mcb-control-unit>.help-popover-anchor>button::before{
+  width:34px!important;height:31px!important;flex-basis:34px!important;
+}
+.floating-player.mini-media-player .media-tools .mcb-control-label{font-size:9px!important;max-width:58px!important;min-height:22px!important}
+.floating-player.mini-media-player .media-tools .mcb-control-unit .help-popover-anchor{height:46px!important}
+.floating-player.mini-media-player .media-tools .mcb-speed-unit{min-width:88px!important}
+.floating-player.mini-media-player .media-tools .mcb-speed-unit .speed-picker{height:46px!important}
+.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton{
+  width:88px!important;min-width:88px!important;max-width:88px!important;height:46px!important;min-height:46px!important;padding:3px!important;
+}
+.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton::before{font-size:14px!important}
+.floating-player.mini-media-player .media-tools .mcb-speed-unit #speedButton::after{font-size:18px!important}
+.floating-player.mini-media-player .media-topbar .media-fullscreen-btn,
+.floating-player.mini-media-player .media-topbar .mcb-float-audio-close{display:none!important}
+
+
+/* V55.7.27: responsive player controls across iPhone, docked and floating views */
+@media (max-width: 700px){
+ .media-tools .media-control-scroll{overflow:visible!important;max-width:100%!important;height:auto!important}
+ .media-tools .media-control-strip{display:flex!important;flex-wrap:wrap!important;gap:6px!important;justify-content:center!important;align-items:flex-start!important;width:100%!important}
+ .media-tools .mcb-control-unit{min-width:0!important;gap:3px!important;flex:0 0 auto!important}
+ .media-tools .mcb-control-unit>button,.media-tools .mcb-control-unit>.help-popover-anchor>button{width:clamp(36px,11vw,54px)!important;min-width:clamp(36px,11vw,54px)!important;max-width:clamp(36px,11vw,54px)!important;height:clamp(40px,12vw,54px)!important;padding:0!important;border-radius:9px!important}
+ .media-tools .mcb-control-unit>button::before,.media-tools .mcb-control-unit>.help-popover-anchor>button::before{width:clamp(26px,8vw,39px)!important;height:clamp(25px,8vw,37px)!important;flex-basis:clamp(26px,8vw,39px)!important}
+ .media-tools .mcb-control-unit .help-popover-anchor{height:clamp(40px,12vw,54px)!important}
+ .media-tools .mcb-control-label{font-size:clamp(8px,2.5vw,11px)!important;max-width:clamp(42px,13vw,62px)!important;min-height:24px!important;line-height:1.1!important;overflow-wrap:normal!important}
+ .media-tools .mcb-speed-unit{min-width:clamp(72px,23vw,104px)!important}
+ .media-tools .mcb-speed-unit .speed-picker{height:clamp(40px,12vw,54px)!important}
+ .media-tools .mcb-speed-unit #speedButton{width:clamp(72px,23vw,104px)!important;min-width:clamp(72px,23vw,104px)!important;max-width:clamp(72px,23vw,104px)!important;height:clamp(40px,12vw,54px)!important;min-height:clamp(40px,12vw,54px)!important;padding:2px!important}
+ .media-tools .mcb-speed-unit #speedButton::before{font-size:clamp(12px,4vw,18px)!important}
+ .media-tools .mcb-speed-unit #speedButton::after{font-size:clamp(16px,5vw,23px)!important}
+}
+@media (max-width: 370px){
+ .media-tools .media-control-strip{gap:4px!important}
+ .media-tools .mcb-control-unit>button,.media-tools .mcb-control-unit>.help-popover-anchor>button{width:36px!important;min-width:36px!important;max-width:36px!important;height:40px!important}
+ .media-tools .mcb-control-unit>button::before,.media-tools .mcb-control-unit>.help-popover-anchor>button::before{width:27px!important;height:27px!important;flex-basis:27px!important}
+}
+/* Audio floating: keep Dock Player, remove Full Screen and Float/Close controls */
+.floating-player.mini-media-player .media-topbar .media-fullscreen-btn,
+.floating-player.mini-media-player .media-topbar .mcb-float-audio-close{display:none!important}
+
 </style>
 </head>
 <body>
@@ -1126,7 +1175,7 @@ function makeMediaViewer(file,r,host){
  const full=document.createElement('button');full.type='button';full.className='secondary media-fullscreen-btn';full.textContent='Full Screen';
  full.title='True screen fullscreen for video; Escape exits';
  full.onclick=()=>{if(isVideo){if(document.fullscreenElement===host)document.exitFullscreen();else enterTrueVideoFullscreen(host,full);}else togglePlayerFullscreen(host,full);};
- const close=document.createElement('button');close.className='secondary';close.textContent='Close Player';close.onclick=()=>{if(playerPipWindow)playerPipWindow.close();closeMedia();$('resourcePreviewCard').hidden=true};
+ const close=document.createElement('button');close.className='secondary mcb-float-audio-close';close.textContent='Close Player';close.onclick=()=>{if(playerPipWindow)playerPipWindow.close();closeMedia();$('resourcePreviewCard').hidden=true};
  bar.append(title,float,full,close);host.append(bar);enablePlayerDrag(host,bar);
  const media=document.createElement(r.kind);media.controls=true;media.preload='metadata';media.src=activeMediaURL;
  media.style.cssText='display:block;width:100%;height:100%;object-fit:contain';
