@@ -1390,37 +1390,5 @@ function openYoutubeCompanion(){
 document.getElementById('youtubeCompanionBtn').addEventListener('click',openYoutubeCompanion);
 </script>
 <script type="module" src="firebase-v55.js"></script>
-
-<style>
-/* The V56 shell owns navigation. Only the original media player is visible. */
-body.mcb-bridge > header, body.mcb-bridge > nav,
-body.mcb-bridge > footer, body.mcb-bridge > .mcb-overlay {display:none!important}
-body.mcb-bridge main > :not(#resources){display:none!important}
-body.mcb-bridge #resources > :not(#resourcePreviewCard){display:none!important}
-body.mcb-bridge #resources{display:block!important}
-body.mcb-bridge #resourcePreviewCard{display:block!important;position:fixed!important;
- inset:0!important;z-index:9999!important;margin:0!important;padding:10px!important;
- overflow:auto!important;background:#f5f8fc!important}
-body.mcb-bridge #resourcePreviewCard .card{margin:0!important}
-body.mcb-bridge #resourcePreviewCard #closeResourcePreview{display:none!important}
-body.mcb-bridge #resourcePreview{min-height:75vh}
-</style>
-<script>
-window.addEventListener('message',async event=>{
- const payload=event.data;
- if(!payload||payload.type!=='MCB_V56_OPEN_MEDIA'||!(payload.file instanceof Blob))return;
- try{
-  document.body.classList.add('mcb-bridge');
-  const id='v56-'+Date.now()+'-'+Math.random().toString(36).slice(2);
-  const kind=payload.kind;
-  const file=payload.file;
-  await mediaPut(id,file);
-  course.resources=course.resources||[];
-  course.resources.push({id,name:payload.name||file.name||'Media',kind,type:file.type||'',size:file.size,scope:'course'});
-  await previewResource(id,false);
-  document.getElementById('resourcePreviewCard').hidden=false;
- }catch(error){document.body.classList.remove('mcb-bridge');alert('Player could not open: '+error.message);console.error(error)}
-});
-</script>
 </body>
 </html>
